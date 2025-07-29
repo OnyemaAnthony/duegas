@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "557671459064",
+    "project_id": "duenergy-2c177",
+    "storage_bucket": "duenergy-2c177.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:557671459064:android:98741191efc88e11d6730d",
+        "android_client_info": {
+          "package_name": "com.duegas.duegas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBI8aoHMndAVEWjbKLlIAr-8W0QZ_8hEXY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
