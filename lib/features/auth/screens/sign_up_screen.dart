@@ -52,11 +52,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       backgroundColor: Colors.white,
       body:
           Consumer<AuthenticationProvider>(builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
         return SafeArea(
           child: SingleChildScrollView(
             child: Padding(

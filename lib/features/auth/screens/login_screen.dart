@@ -1,6 +1,6 @@
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
-import 'package:duegas/features/app/home_screen.dart';
+import 'package:duegas/features/app/setting_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
-          AppRouter.pushReplace(context, DashboardScreen());
+          AppRouter.pushReplace(context, SettingScreen());
         } catch (e) {
           context.showCustomToast(message: e.toString());
         }

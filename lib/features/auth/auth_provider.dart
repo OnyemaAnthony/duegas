@@ -41,4 +41,18 @@ class AuthenticationProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> logout() async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      await repository!.signOut();
+    } catch (e) {
+      error = AppError.exception(e);
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }

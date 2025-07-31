@@ -1,8 +1,11 @@
+import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/features/app/home_screen.dart';
+import 'package:duegas/features/auth/auth_provider.dart';
+import 'package:duegas/features/auth/screens/login_screen.dart';
 import 'package:duegas/features/widgets/new_sale_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-// A simple data model for a customer
 class Customer {
   final String name;
   final String joinDate;
@@ -257,7 +260,14 @@ class _UserInfoHeader extends StatelessWidget {
             ),
             child: IconButton(
               icon: const Icon(Icons.exit_to_app, color: Colors.orange),
-              onPressed: () {},
+              onPressed: () async {
+                final authProvider =
+                    Provider.of<AuthenticationProvider>(context, listen: false);
+                await authProvider.logout();
+                if (context.mounted) {
+                  AppRouter.pushReplace(context, LoginScreen());
+                }
+              },
             ),
           ),
         ],
