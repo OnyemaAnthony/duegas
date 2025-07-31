@@ -1,5 +1,10 @@
+import 'package:duegas/core/extensions/toast_message.dart';
+import 'package:duegas/core/utils/app_router.dart';
+import 'package:duegas/features/app/home_screen.dart';
+import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,57 +21,65 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - kToolbarHeight,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 60),
-                      const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
+      body:
+          Consumer<AuthenticationProvider>(builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - kToolbarHeight,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 60),
+                        const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 40),
-                      _buildTextField(
-                          controller: _emailController,
-                          label: 'Email:',
-                          hintText: 'Ugo@gmail.com'),
-                      const SizedBox(height: 20),
-                      _buildTextField(
-                          controller: _passwordController,
-                          label: 'Create Password:',
-                          isPassword: true,
-                          hintText: '*********'),
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildProceedButton(),
-                      const SizedBox(height: 20),
-                      _buildSignUpLink(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ],
+                        const SizedBox(height: 40),
+                        _buildTextField(
+                            controller: _emailController,
+                            label: 'Email:',
+                            hintText: 'Ugo@gmail.com'),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                            controller: _passwordController,
+                            label: 'Create Password:',
+                            isPassword: true,
+                            hintText: '*********'),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildProceedButton(),
+                        const SizedBox(height: 20),
+                        _buildSignUpLink(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -135,7 +148,19 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(12.0),
         ),
       ),
-      onPressed: () {},
+      onPressed: () {
+        try {
+          final authProvider =
+              Provider.of<AuthenticationProvider>(context, listen: false);
+          authProvider.login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+          AppRouter.pushReplace(context, DashboardScreen());
+        } catch (e) {
+          context.showCustomToast(message: e.toString());
+        }
+      },
       child: const Text(
         'Proceed',
         style: TextStyle(
