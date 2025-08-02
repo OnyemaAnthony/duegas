@@ -488,17 +488,12 @@ void _showSettingsDialog(BuildContext dialogContext) {
                       ),
                       onPressed: () async {
                         try {
-                          final rawPrice =
-                              _extractRawValue(priceController.text);
-                          final rawKgPrice =
-                              _extractRawValue(quantityController.text);
-
                           await provider.saveBalance(
                             GasBalanceModel(
-                                total: rawPrice,
+                                total: priceController.text,
                                 createdAt: DateTime.now(),
                                 updatedAt: DateTime.now(),
-                                oneKg: rawKgPrice),
+                                oneKg: quantityController.text),
                           );
                           if (!dialogContext.mounted) return;
                           dialogContext.showCustomToast(
