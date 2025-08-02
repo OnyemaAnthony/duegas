@@ -1,7 +1,7 @@
 import 'package:duegas/core/ui_data.dart';
 import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
-import 'package:duegas/features/auth/model/customer_model.dart';
+import 'package:duegas/features/auth/model/customer.dart';
 import 'package:duegas/features/auth/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -156,7 +156,7 @@ Widget buildCustomerListItem(BuildContext context, Customer customer) {
                       size: 30, color: Colors.grey)
                   : null,
             ),
-            if (customer.hasBirthday)
+            if (customer.hasBirthday ?? false)
               Positioned(
                 bottom: -5,
                 left: -5,

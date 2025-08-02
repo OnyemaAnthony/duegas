@@ -1,4 +1,4 @@
-import '../features/auth/model/customer_model.dart';
+import 'package:duegas/features/auth/model/customer.dart';
 
 final List<Customer> customers = [
   Customer(
@@ -29,7 +29,7 @@ final List<Customer> customers = [
   Customer(
     name: 'Hyginus Mgbgojikwe',
     joinDate: 'Since 18/01/2025',
-    netSpend: 400.10,
+    netSpend: 400.10, imageUrl: '',
     // No imageUrl to show the placeholder icon
   ),
   Customer(
