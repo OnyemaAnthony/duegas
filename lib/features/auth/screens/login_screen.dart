@@ -1,6 +1,6 @@
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
-import 'package:duegas/features/app/navigation_screen.dart';
+import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

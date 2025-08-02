@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:duegas/features/app/navigation_screen.dart';
+import 'package:duegas/features/app/app_provider.dart';
+import 'package:duegas/features/app/app_repository.dart';
+import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
 import 'package:duegas/features/auth/screens/sign_up_screen.dart';
@@ -62,6 +64,11 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => AuthenticationProvider(
             context.read<AuthRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AppProvider(
+            repository: AppRepository(firestore: FirebaseFirestore.instance),
           ),
         ),
         StreamProvider<User?>(

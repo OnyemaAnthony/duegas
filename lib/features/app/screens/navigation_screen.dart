@@ -1,5 +1,5 @@
-import 'package:duegas/features/app/home_screen.dart';
-import 'package:duegas/features/app/user_profile.dart';
+import 'package:duegas/features/app/screens/home_screen.dart';
+import 'package:duegas/features/app/screens/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -14,7 +14,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
-    const DashboardScreen(),
+    DashboardScreen(),
     const SizedBox(),
     const userProfile(),
   ];
