@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:duegas/features/app/setting_screen.dart';
+import 'package:duegas/features/app/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
 import 'package:duegas/features/auth/screens/sign_up_screen.dart';
@@ -88,7 +88,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         primaryColor: Colors.black,
       ),
-      home: user == null ? const SignUpScreen() : const SettingScreen(),
+      home: user == null ? const SignUpScreen() : const NavigationScreen(),
     );
   }
 }
