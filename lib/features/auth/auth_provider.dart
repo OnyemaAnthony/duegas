@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:duegas/core/utils/error.dart';
 import 'package:duegas/core/utils/logger.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
+import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/model/user_model.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -9,8 +12,47 @@ class AuthenticationProvider with ChangeNotifier {
   bool isLoading = false;
   UserModel? user;
   AppError? error;
+  List<CustomerModel>? customers;
+  StreamSubscription? _customerSubscription;
 
-  AuthenticationProvider(this.repository);
+  AuthenticationProvider(this.repository) {
+    _loadCustomers();
+  }
+
+  void _loadCustomers() async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      _customerSubscription = repository?.getCustomers().listen(
+        (customerList) {
+          customers = customerList;
+          error = null;
+          isLoading = false;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      error = AppError.exception(e);
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> saveCustomer(CustomerModel customer) async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      await repository!.saveCustomer(customer);
+    } catch (e) {
+      error = AppError.exception(e);
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> signUp(UserModel userModel) async {
     try {

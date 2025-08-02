@@ -1,7 +1,7 @@
-import 'package:duegas/core/ui_data.dart';
+import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
-import 'package:duegas/features/auth/model/customer.dart';
+import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,23 +13,32 @@ class userProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            buildUserInfoHeader(context),
-            buildSearchBar(context),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: customers.length,
-                itemBuilder: (context, index) {
-                  return buildCustomerListItem(context, customers[index]);
-                },
+      body:
+          Consumer<AuthenticationProvider>(builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        return SafeArea(
+          child: Column(
+            children: [
+              buildUserInfoHeader(context),
+              buildSearchBar(context),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  itemCount: provider.customers?.length,
+                  itemBuilder: (context, index) {
+                    return buildCustomerListItem(
+                        context, provider.customers![index]);
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
@@ -137,7 +146,7 @@ Widget buildSearchBar(BuildContext context) {
   );
 }
 
-Widget buildCustomerListItem(BuildContext context, Customer customer) {
+Widget buildCustomerListItem(BuildContext context, CustomerModel customer) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 12.0),
     child: Row(
@@ -148,31 +157,10 @@ Widget buildCustomerListItem(BuildContext context, Customer customer) {
             CircleAvatar(
               radius: 28,
               backgroundColor: Colors.grey[300],
-              backgroundImage: customer.imageUrl != null
-                  ? NetworkImage(customer.imageUrl!)
-                  : null,
-              child: customer.imageUrl == null
-                  ? const Icon(Icons.person_outline,
-                      size: 30, color: Colors.grey)
-                  : null,
-            ),
-            if (customer.hasBirthday ?? false)
-              Positioned(
-                bottom: -5,
-                left: -5,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black12, blurRadius: 4),
-                    ],
-                  ),
-                  child: const Icon(Icons.card_giftcard,
-                      color: Colors.purple, size: 20),
-                ),
+              child: const Icon(
+                Icons.person_outline,
               ),
+            ),
           ],
         ),
         const SizedBox(width: 16),
@@ -180,12 +168,12 @@ Widget buildCustomerListItem(BuildContext context, Customer customer) {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              customer.name,
+              customer.name!,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
-              customer.joinDate,
+              'Since ${DateFormat('dd MMMM yyyy').format(customer.createdAt!)}',
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ],
@@ -195,7 +183,7 @@ Widget buildCustomerListItem(BuildContext context, Customer customer) {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '₦${customer.netSpend.toStringAsFixed(2)}',
+              '₦${customer.netSpend?.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
@@ -210,126 +198,184 @@ Widget buildCustomerListItem(BuildContext context, Customer customer) {
   );
 }
 
-void _showNewCustomerDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          final nameController = TextEditingController();
-          final numberController = TextEditingController();
-          final emailController = TextEditingController();
-          final birthdayController = TextEditingController();
-          DateTime? selectedDate;
+void _showNewCustomerDialog(BuildContext dialogContext) {
+  final nameController = TextEditingController();
+  final numberController = TextEditingController();
+  final emailController = TextEditingController();
+  final birthdayController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  DateTime? selectedDate;
 
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(24.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // To make the card compact
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'New Customer',
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
+  showDialog(
+    context: dialogContext,
+    builder: (BuildContext context) {
+      return Consumer<AuthenticationProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title & Close
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('New Customer',
+                                  style: TextStyle(
+                                      fontSize: 24.0,
+                                      fontWeight: FontWeight.bold)),
+                              InkWell(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close,
+                                      color: Colors.black54),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        InkWell(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              shape: BoxShape.circle,
+                          const SizedBox(height: 24.0),
+
+                          // Name
+                          _buildInputDialogField(
+                            controller: nameController,
+                            label: 'Name',
+                            isRequired: true,
+                          ),
+
+                          const SizedBox(height: 16.0),
+
+                          // Number
+                          _buildInputDialogField(
+                            controller: numberController,
+                            label: 'Number',
+                            keyboardType: TextInputType.phone,
+                          ),
+
+                          const SizedBox(height: 16.0),
+
+                          // Email
+                          _buildInputDialogField(
+                            controller: emailController,
+                            label: 'Email',
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+
+                          const SizedBox(height: 16.0),
+
+                          // Date of birth
+                          _buildInputDialogField(
+                            controller: birthdayController,
+                            label: 'Date of Birth',
+                            readOnly: true,
+                            isRequired: true,
+                            prefixIcon: Icon(Icons.calendar_today,
+                                color: Colors.grey.shade600),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate ?? DateTime(2000),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  selectedDate = picked;
+                                  birthdayController.text =
+                                      DateFormat('dd MMMM yyyy').format(picked);
+                                });
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 32.0),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16.0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (formKey.currentState?.validate() ?? false) {
+                                  try {
+                                    if (nameController.text.isEmpty) {
+                                      return dialogContext.showCustomToast(
+                                          message: 'Name is required');
+                                    }
+
+                                    if (numberController.text.isEmpty) {
+                                      return dialogContext.showCustomToast(
+                                          message: 'Phone number is required');
+                                    }
+                                    if (emailController.text.isEmpty) {
+                                      return dialogContext.showCustomToast(
+                                          message: 'Email is required');
+                                    }
+
+                                    if (birthdayController.text.isEmpty) {
+                                      return dialogContext.showCustomToast(
+                                          message: 'Date of birth is Required');
+                                    }
+                                    await provider.saveCustomer(
+                                      CustomerModel(
+                                        name: nameController.text,
+                                        phoneNumber: numberController.text,
+                                        netSpend: 0.0,
+                                        createdAt: DateTime.now(),
+                                        updatedAt: DateTime.now(),
+                                        dob: selectedDate,
+                                      ),
+                                    );
+                                    if (!dialogContext.mounted) return;
+                                    dialogContext.showCustomToast(
+                                        message: 'Customer added successfully');
+                                    Navigator.of(dialogContext).pop();
+                                  } catch (e) {
+                                    dialogContext.showCustomToast(
+                                        message: e.toString());
+                                  }
+                                }
+                              },
+                              child: const Text('Create Customer',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white)),
                             ),
-                            child:
-                                const Icon(Icons.close, color: Colors.black54),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24.0),
-                    _buildInputDialogField(
-                      controller: nameController,
-                      label: 'Name',
-                      isRequired: true,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildInputDialogField(
-                      controller: numberController,
-                      label: 'Number',
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildInputDialogField(
-                      controller: emailController,
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 16.0),
-                    _buildInputDialogField(
-                      controller: birthdayController,
-                      label: 'Next Birthday',
-                      readOnly: true,
-                      prefixIcon: Icon(Icons.calendar_today,
-                          color: Colors.grey.shade600),
-                      onTap: () async {
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate ?? DateTime.now(),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2101),
-                        );
-                        if (picked != null && picked != selectedDate) {
-                          setState(() {
-                            selectedDate = picked;
-                            birthdayController.text =
-                                DateFormat('dd/MM/yyyy').format(picked);
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 32.0),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                        ),
-                        onPressed: () {
-                          // TODO: Implement save logic here
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'Save & Exit',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       );

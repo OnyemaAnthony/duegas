@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/model/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -33,5 +34,24 @@ class AuthRepository {
 
   Future<void> signOut() async {
     await firebaseAuth.signOut();
+  }
+
+  // In your repository class
+  Stream<List<CustomerModel>> getCustomers() {
+    return firestore.collection('Customers').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CustomerModel.fromJson(doc.data()))
+          .toList();
+    });
+  }
+  // Future<List<CustomerModel>> getCustomers() async {
+  //   final snapshot = await firestore.collection('Customers').get();
+  //   return snapshot.docs
+  //       .map((doc) => CustomerModel.fromJson(doc.data()))
+  //       .toList();
+  // }
+
+  Future<void> saveCustomer(CustomerModel customer) async {
+    await firestore.collection('Customers').add(customer.toJson());
   }
 }
