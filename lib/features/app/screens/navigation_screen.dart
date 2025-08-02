@@ -272,13 +272,15 @@ class _NavigationScreenState extends State<NavigationScreen> {
             children: <Widget>[
               IconButton(
                 icon: Icon(Icons.home,
-                    color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
+                    size: 35,
+                    color: _selectedIndex == 0 ? Colors.black : Colors.grey),
                 onPressed: () => _onItemTapped(0),
               ),
-              const SizedBox(width: 40), // The space for the FAB
+              const SizedBox(width: 40),
               IconButton(
                 icon: Icon(Icons.person,
-                    color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
+                    size: 35,
+                    color: _selectedIndex == 2 ? Colors.black : Colors.grey),
                 onPressed: () => _onItemTapped(2),
               ),
             ],
