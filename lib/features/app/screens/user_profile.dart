@@ -44,6 +44,8 @@ class userProfile extends StatelessWidget {
 }
 
 Widget buildUserInfoHeader(BuildContext context) {
+  final userModel =
+      Provider.of<AuthenticationProvider>(context, listen: false).user;
   return Padding(
     padding: const EdgeInsets.all(16.0),
     child: Row(
@@ -51,9 +53,9 @@ Widget buildUserInfoHeader(BuildContext context) {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 30,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=45'),
+              child: Text(userModel!.name!.split('').first),
             ),
             Positioned(
               bottom: -4,
@@ -70,15 +72,15 @@ Widget buildUserInfoHeader(BuildContext context) {
           ],
         ),
         const SizedBox(width: 12),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Aaron Okafor',
+              userModel!.name!,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
-              'aaronokafor5W@gmail.com',
+              userModel!.email!,
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],

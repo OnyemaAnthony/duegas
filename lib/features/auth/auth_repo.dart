@@ -51,6 +51,12 @@ class AuthRepository {
   //       .toList();
   // }
 
+  Future<UserModel> getUserById() async {
+    String id = firebaseAuth.currentUser!.uid;
+    final user = await firestore.collection('Users').doc(id).get();
+    return UserModel.fromJson(user.data()!);
+  }
+
   Future<void> saveCustomer(CustomerModel customer) async {
     await firestore.collection('Customers').add(customer.toJson());
   }

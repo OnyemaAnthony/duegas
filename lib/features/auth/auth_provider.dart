@@ -17,6 +17,7 @@ class AuthenticationProvider with ChangeNotifier {
 
   AuthenticationProvider(this.repository) {
     _loadCustomers();
+    loadUser();
   }
 
   void _loadCustomers() async {
@@ -31,6 +32,20 @@ class AuthenticationProvider with ChangeNotifier {
           notifyListeners();
         },
       );
+    } catch (e) {
+      error = AppError.exception(e);
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadUser() async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      user = await repository!.getUserById();
     } catch (e) {
       error = AppError.exception(e);
       rethrow;
