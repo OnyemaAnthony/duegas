@@ -148,14 +148,15 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(12.0),
         ),
       ),
-      onPressed: () {
+      onPressed: () async {
         try {
           final authProvider =
               Provider.of<AuthenticationProvider>(context, listen: false);
-          authProvider.login(
+          await authProvider.login(
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+          if (!mounted) return;
           AppRouter.pushReplace(context, NavigationScreen());
         } catch (e) {
           context.showCustomToast(message: e.toString());
@@ -189,7 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
-                    // Navigate to Sign Up screen
                     print('Navigate to Sign Up');
                   }),
           ],

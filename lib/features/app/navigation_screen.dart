@@ -1,5 +1,5 @@
 import 'package:duegas/features/app/home_screen.dart';
-import 'package:duegas/features/app/setting_screen.dart';
+import 'package:duegas/features/app/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -16,7 +16,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   static final List<Widget> _widgetOptions = <Widget>[
     const DashboardScreen(),
     const SizedBox(),
-    const CustomersScreen(),
+    const userProfile(),
   ];
 
   void _onItemTapped(int index) {

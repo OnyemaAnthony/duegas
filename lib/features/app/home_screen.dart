@@ -215,11 +215,9 @@ class DashboardScreen extends StatelessWidget {
                     parentAxisSize: 200,
                     axisPosition: 50,
                     appliedInterval: 10,
-                    sideTitles:
-                        SideTitles(showTitles: true), // adjust as needed
-                    formattedValue: '50 kg', // or any dynamic value you use
-                    axisSide:
-                        AxisSide.left, // or right/top/bottom depending on usage
+                    sideTitles: SideTitles(showTitles: true),
+                    formattedValue: '50 kg',
+                    axisSide: AxisSide.left,
                     rotationQuarterTurns: 0,
                   ),
                   child: text,
@@ -386,59 +384,6 @@ class DashboardScreen extends StatelessWidget {
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Positioned(
-      bottom: 20,
-      left: 20,
-      right: 20,
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 5,
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.home, color: Colors.white, size: 30),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('New Sale',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            const Icon(Icons.person_outline, color: Colors.grey, size: 30),
-          ],
-        ),
       ),
     );
   }
