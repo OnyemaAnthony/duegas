@@ -4,7 +4,7 @@ import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart'; // Import the intl package
+import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
@@ -88,7 +88,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // ... (The rest of your existing widgets: _buildSalesCard, _buildGasBalance, etc. remain the same)
   Widget _buildSalesCard() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -540,11 +539,4 @@ Widget _buildTextField(TextEditingController controller, String label,
       ),
     ),
   );
-}
-
-String _extractRawValue(String formatted) {
-  final digitsOnly = formatted.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digitsOnly.isEmpty) return '0.00';
-  final value = double.parse(digitsOnly) / 100;
-  return value.toStringAsFixed(2); // Returns clean numeric string
 }
