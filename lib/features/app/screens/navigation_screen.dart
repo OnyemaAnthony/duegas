@@ -78,9 +78,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
       builder: (BuildContext context) {
         return Consumer<AppProvider>(builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
+            return Container();
+            // return Center(
+            //   child: CircularProgressIndicator(),
+            // );
           }
           return StatefulBuilder(
             builder: (context, setState) {
@@ -177,6 +178,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                                 quantityController.text)),
                                       ),
                                     );
+                                    await appProvider.getSales();
                                     if (!dialogContext.mounted) return;
 
                                     dialogContext.showCustomToast(

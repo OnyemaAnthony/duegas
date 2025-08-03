@@ -1,6 +1,10 @@
 import 'package:duegas/core/extensions/toast_message.dart';
+import 'package:duegas/core/extensions/ui_extension.dart';
+import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
+import 'package:duegas/features/app/model/sales_model.dart';
+import 'package:duegas/features/app/screens/sales_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +24,11 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       body: Consumer<AppProvider>(builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
         return Stack(
           children: [
             SingleChildScrollView(
@@ -34,7 +43,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 30),
                     _buildGasBalance(provider),
                     const SizedBox(height: 30),
-                    _buildRecentTransactions(),
+                    _buildRecentTransactions(provider, context),
                   ],
                 ),
               ),
@@ -342,56 +351,68 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentTransactions() {
+  Widget _buildRecentTransactions(AppProvider provider, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Recent Transactions',
-          style: TextStyle(color: Colors.grey, fontSize: 18),
+        Row(
+          children: [
+            const Text(
+              'Recent Transactions',
+              style: TextStyle(color: Colors.grey, fontSize: 18),
+            ),
+            Spacer(),
+            Text('View all').onClick(() {
+              AppRouter.getPage(
+                context,
+                SalesScreen(salesModel: provider.sales!),
+              );
+            }),
+          ],
         ),
-        const SizedBox(height: 16),
-        _buildTransactionItem(
-            'Mrs Effiong AKpabio', '9:01am', '₦13.10', 'assets/avatar1.jpg'),
-        _buildTransactionItem(
-            'Engr Godswill Emmanuel', '9:01am', '₦13.10', 'assets/avatar2.jpg'),
-        _buildTransactionItem('Hyginus Mgbojikwe', '9:01am', '₦13.10', null),
-        _buildTransactionItem(
-            'Bald Anthony Onyeama', '9:01am', '₦13.10', 'assets/avatar3.jpg'),
+        _buildTransactionList(provider.sales!),
       ],
     );
   }
 
-  Widget _buildTransactionItem(
-      String name, String time, String amount, String? avatarPath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey.shade200,
-              child: const Icon(Icons.person, color: Colors.grey)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTransactionList(List<SalesModel> sales) {
+    return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: sales.length,
+        itemBuilder: (context, index) {
+          final sale = sales[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Row(
               children: [
-                Text(name,
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.grey.shade200,
+                  child: Text(sale.customersName!.split('').first),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(sale.customersName!,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 4),
+                      Text(DateFormat('dd MMMM yyyy').format(sale.createdAt!),
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 14)),
+                    ],
+                  ),
+                ),
+                Text(' ₦${sale.priceInNaira!.toString()}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Text(time,
-                    style: const TextStyle(color: Colors.grey, fontSize: 14)),
               ],
             ),
-          ),
-          Text(amount,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        ],
-      ),
-    );
+          );
+        });
   }
 }
 

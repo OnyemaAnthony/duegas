@@ -9,9 +9,11 @@ class AppProvider with ChangeNotifier {
   GasBalanceModel? gasBalance;
   bool isLoading = false;
   AppError? error;
+  List<SalesModel>? sales;
 
   AppProvider({required this.repository}) {
     _listenToGasBalance();
+    getSales();
   }
 
   Future<void> saveBalance(GasBalanceModel balance) async {
@@ -19,6 +21,20 @@ class AppProvider with ChangeNotifier {
       isLoading = true;
       notifyListeners();
       await repository.saveGasBalance(balance);
+    } catch (e) {
+      error = AppError.exception(e);
+      rethrow;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getSales() async {
+    try {
+      isLoading = true;
+      notifyListeners();
+      sales = await repository.getSales();
     } catch (e) {
       error = AppError.exception(e);
       rethrow;

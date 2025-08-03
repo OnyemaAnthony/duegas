@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
+import 'package:duegas/features/auth/model/customer_model.dart';
 
 class AppRepository {
   final FirebaseFirestore firestore;
@@ -35,5 +36,31 @@ class AppRepository {
         .doc(balance.id)
         .update(gasBalanceUpdate);
     await firestore.collection('Sales').add(sales.toJson());
+    final customerDoc =
+        await firestore.collection('Customers').doc(sales.customersId).get();
+
+    CustomerModel customer =
+        CustomerModel.fromJson(customerDoc.data()!, id: customerDoc.id);
+    double netSale = customer.netSpend ?? 0.0;
+
+    double newNetSale = netSale + sales.priceInNaira!;
+
+    await firestore
+        .collection('Customers')
+        .doc(sales.customersId)
+        .update({'netSpend': newNetSale});
+  }
+
+  Future<List<SalesModel>> getSales() async {
+    final querySnapshot = await firestore
+        .collection('Sales')
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .get();
+
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
+      return SalesModel.fromJson(data, docId: doc.id);
+    }).toList();
   }
 }
