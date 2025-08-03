@@ -20,11 +20,6 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       body: Consumer<AppProvider>(builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-        }
         return Stack(
           children: [
             SingleChildScrollView(
@@ -299,13 +294,11 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: currencyFormatter.format(
-                            double.parse(
-                              provider.gasBalance!.total!,
-                            ),
+                            (provider.gasBalance!.totalPrice),
                           ),
                         ),
                         TextSpan(
-                          text: ' Kg',
+                          text: '',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.normal,
@@ -403,6 +396,9 @@ class DashboardScreen extends StatelessWidget {
 }
 
 void _showSettingsDialog(BuildContext dialogContext) {
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
+
   showDialog(
     context: dialogContext,
     builder: (BuildContext context) {
@@ -410,10 +406,18 @@ void _showSettingsDialog(BuildContext dialogContext) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
+
         return StatefulBuilder(builder: (context, setState) {
-          final TextEditingController quantityController =
-              TextEditingController();
-          final TextEditingController priceController = TextEditingController();
+          void attachListeners() {
+            priceController.addListener(() => setState(() {}));
+            quantityController.addListener(() => setState(() {}));
+          }
+
+          attachListeners();
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!priceController.hasListeners) attachListeners();
+          });
 
           return Dialog(
             shape: RoundedRectangleBorder(
@@ -455,6 +459,8 @@ void _showSettingsDialog(BuildContext dialogContext) {
                     ],
                   ),
                   const SizedBox(height: 32),
+
+                  // Input Fields
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -465,16 +471,39 @@ void _showSettingsDialog(BuildContext dialogContext) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTextField(quantityController, "Price of (1Kg)",
-                            false, 'Enter price of 1kg in (₦)'),
+                        _buildTextField(
+                          priceController,
+                          "Price of (1Kg)",
+                          false,
+                          'Enter price of 1kg in (₦)',
+                        ),
                         const SizedBox(height: 15),
-                        _buildTextField(priceController, "Quantity", false,
-                            'Enter quantity of Gas'),
-                        const SizedBox(height: 22),
+                        _buildTextField(
+                          quantityController,
+                          "Quantity",
+                          false,
+                          'Enter quantity of Gas',
+                        ),
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 22),
+                  (priceController.text.isNotEmpty &&
+                          quantityController.text.isNotEmpty)
+                      ? Text(
+                          'Price in Naira: ₦${getTotalPrice(
+                            double.tryParse(priceController.text) ?? 0,
+                            double.tryParse(quantityController.text) ?? 0,
+                          ).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        )
+                      : const SizedBox.shrink(),
+
                   const SizedBox(height: 32),
+
+                  // Submit Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -486,15 +515,29 @@ void _showSettingsDialog(BuildContext dialogContext) {
                         ),
                       ),
                       onPressed: () async {
+                        final price = double.tryParse(priceController.text);
+                        final quantity =
+                            double.tryParse(quantityController.text);
+
+                        if (price == null || quantity == null) {
+                          dialogContext.showCustomToast(
+                              message: "Please enter valid numbers");
+                          return;
+                        }
+
                         try {
                           await provider.saveBalance(
                             GasBalanceModel(
-                                total: priceController.text,
-                                createdAt: DateTime.now(),
-                                updatedAt: DateTime.now(),
-                                oneKg: quantityController.text),
+                              totalPrice: getTotalPrice(price, quantity),
+                              createdAt: DateTime.now(),
+                              updatedAt: DateTime.now(),
+                              priceOfOneKg: price,
+                              quantityKg: quantity,
+                            ),
                           );
+
                           if (!dialogContext.mounted) return;
+
                           dialogContext.showCustomToast(
                               message: "Balance set successfully");
                           Navigator.of(dialogContext).pop();
@@ -516,6 +559,137 @@ void _showSettingsDialog(BuildContext dialogContext) {
       });
     },
   );
+}
+
+//
+// void _showSettingsDialog(BuildContext dialogContext) {
+//   showDialog(
+//     context: dialogContext,
+//     builder: (BuildContext context) {
+//       return Consumer<AppProvider>(builder: (context, provider, child) {
+//         if (provider.isLoading) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         return StatefulBuilder(builder: (context, setState) {
+//           final TextEditingController quantityController =
+//               TextEditingController();
+//           final TextEditingController priceController = TextEditingController();
+//
+//           return Dialog(
+//             shape: RoundedRectangleBorder(
+//               borderRadius: BorderRadius.circular(20.0),
+//             ),
+//             elevation: 0,
+//             backgroundColor: Colors.transparent,
+//             child: Container(
+//               padding: const EdgeInsets.all(24.0),
+//               decoration: BoxDecoration(
+//                 color: Colors.white,
+//                 shape: BoxShape.rectangle,
+//                 borderRadius: BorderRadius.circular(20.0),
+//               ),
+//               child: Column(
+//                 mainAxisSize: MainAxisSize.min,
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: <Widget>[
+//                   // Header
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       const Text(
+//                         'Settings',
+//                         style: TextStyle(
+//                             fontSize: 24, fontWeight: FontWeight.bold),
+//                       ),
+//                       InkWell(
+//                         onTap: () => Navigator.of(context).pop(),
+//                         child: Container(
+//                           padding: const EdgeInsets.all(4),
+//                           decoration: BoxDecoration(
+//                             color: Colors.grey.shade300,
+//                             shape: BoxShape.circle,
+//                           ),
+//                           child: const Icon(Icons.close, color: Colors.black54),
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                   const SizedBox(height: 32),
+//                   Container(
+//                     padding: const EdgeInsets.symmetric(
+//                         horizontal: 16, vertical: 12),
+//                     decoration: BoxDecoration(
+//                       border: Border.all(color: Colors.grey.shade300),
+//                       borderRadius: BorderRadius.circular(12),
+//                     ),
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         _buildTextField(quantityController, "Price of (1Kg)",
+//                             false, 'Enter price of 1kg in (₦)'),
+//                         const SizedBox(height: 15),
+//                         _buildTextField(priceController, "Quantity", false,
+//                             'Enter quantity of Gas'),
+//                         const SizedBox(height: 22),
+//                       ],
+//                     ),
+//                   ),
+//                   priceController.text.isNotEmpty &&
+//                           quantityController.text.isNotEmpty
+//                       ? Text(
+//                           'Price in Naira ${getTotalPrice(double.tryParse(priceController.text) ?? 0, double.tryParse(quantityController.text) ?? 0)}')
+//                       : const SizedBox.shrink(),
+//                   const SizedBox(height: 32),
+//                   SizedBox(
+//                     width: double.infinity,
+//                     child: ElevatedButton(
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: Colors.black,
+//                         padding: const EdgeInsets.symmetric(vertical: 16.0),
+//                         shape: RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(12.0),
+//                         ),
+//                       ),
+//                       onPressed: () async {
+//                         try {
+//                           await provider.saveBalance(
+//                             GasBalanceModel(
+//                                 totalPrice: getTotalPrice(
+//                                     double.parse(priceController.text),
+//                                     double.parse(quantityController.text)),
+//                                 createdAt: DateTime.now(),
+//                                 updatedAt: DateTime.now(),
+//                                 priceOfOneKg:
+//                                     double.parse(priceController.text),
+//                                 quantityKg:
+//                                     double.parse(quantityController.text)),
+//                           );
+//                           if (!dialogContext.mounted) return;
+//                           dialogContext.showCustomToast(
+//                               message: "Balance set successfully");
+//                           Navigator.of(dialogContext).pop();
+//                         } catch (e) {
+//                           dialogContext.showCustomToast(message: e.toString());
+//                         }
+//                       },
+//                       child: const Text(
+//                         'Save & Continue',
+//                         style: TextStyle(fontSize: 18, color: Colors.white),
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           );
+//         });
+//       });
+//     },
+//   );
+// }
+
+double getTotalPrice(double price, double quantity) {
+  return quantity * price;
 }
 
 Widget _buildTextField(TextEditingController controller, String label,

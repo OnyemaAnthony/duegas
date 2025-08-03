@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CustomerModel {
   String? name;
+  String? id;
   String? phoneNumber;
   double? netSpend;
   bool? hasBirthday;
@@ -10,6 +11,7 @@ class CustomerModel {
   DateTime? updatedAt;
 
   CustomerModel({
+    this.id,
     this.name,
     this.phoneNumber,
     this.netSpend,
@@ -21,7 +23,8 @@ class CustomerModel {
 
   factory CustomerModel.fromJson(Map<String, dynamic> json, {String? id}) {
     return CustomerModel(
-      name: id ?? json['name'] as String?,
+      id: id ?? json['id'],
+      name: json['name'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
       netSpend: (json['netSpend'] as num?)?.toDouble(),
       hasBirthday: json['hasBirthday'] as bool? ?? false,

@@ -40,7 +40,7 @@ class AuthRepository {
   Stream<List<CustomerModel>> getCustomers() {
     return firestore.collection('Customers').snapshots().map((snapshot) {
       return snapshot.docs
-          .map((doc) => CustomerModel.fromJson(doc.data()))
+          .map((doc) => CustomerModel.fromJson(doc.data(), id: doc.id))
           .toList();
     });
   }

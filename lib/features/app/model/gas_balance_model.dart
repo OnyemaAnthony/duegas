@@ -2,15 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GasBalanceModel {
   String? id;
-  String? total;
-  String? oneKg;
+  double? totalPrice;
+  double? priceOfOneKg;
+  double? quantityKg;
   DateTime? createdAt;
   DateTime? updatedAt;
 
   GasBalanceModel({
     this.id,
-    this.total,
-    this.oneKg,
+    this.totalPrice,
+    this.priceOfOneKg,
+    this.quantityKg,
     this.createdAt,
     this.updatedAt,
   });
@@ -18,8 +20,9 @@ class GasBalanceModel {
   factory GasBalanceModel.fromJson(Map<String, dynamic> json, {String? id}) {
     return GasBalanceModel(
       id: id,
-      total: json['total'] as String?,
-      oneKg: json['oneKg'] as String?,
+      totalPrice: json['totalPrice'] as double?,
+      priceOfOneKg: json['priceOfOneKg'] as double?,
+      quantityKg: json['quantityKg'] as double?,
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (json['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -27,8 +30,9 @@ class GasBalanceModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'total': total,
-      'oneKg': oneKg,
+      'totalPrice': totalPrice,
+      'priceOfOneKg': priceOfOneKg,
+      'quantityKg': quantityKg,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

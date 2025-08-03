@@ -1,3 +1,4 @@
+import 'package:duegas/core/extensions/ui_extension.dart';
 import 'package:duegas/features/app/screens/user_profile.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,9 @@ class CustomersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Select customer'),
+      ),
       body:
           Consumer<AuthenticationProvider>(builder: (context, provider, child) {
         if (provider.isLoading) {
@@ -25,7 +29,10 @@ class CustomersScreen extends StatelessWidget {
                   itemCount: provider.customers?.length,
                   itemBuilder: (context, index) {
                     return buildCustomerListItem(
-                        context, provider.customers![index]);
+                            context, provider.customers![index])
+                        .onClick(() {
+                      Navigator.of(context).pop(provider.customers![index]);
+                    });
                   },
                 ),
               ),

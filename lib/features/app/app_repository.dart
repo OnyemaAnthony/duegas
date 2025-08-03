@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
+import 'package:duegas/features/app/model/sales_model.dart';
 
 class AppRepository {
   final FirebaseFirestore firestore;
@@ -20,5 +21,19 @@ class AppRepository {
 
   Future<void> saveGasBalance(GasBalanceModel balance) async {
     await firestore.collection('GasBalance').add(balance.toJson());
+  }
+
+  Future<void> makeSale(GasBalanceModel balance, SalesModel sales) async {
+    double remainingKg = (balance.quantityKg! - sales.quantityInKg!);
+    double remainingPrice = (balance.totalPrice! - sales.priceInNaira!);
+    Map<String, dynamic> gasBalanceUpdate = {
+      'quantityKg': remainingKg,
+      'totalPrice': remainingPrice
+    };
+    await firestore
+        .collection('GasBalance')
+        .doc(balance.id)
+        .update(gasBalanceUpdate);
+    await firestore.collection('Sales').add(sales.toJson());
   }
 }
