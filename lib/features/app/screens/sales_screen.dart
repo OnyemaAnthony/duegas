@@ -13,7 +13,14 @@ class SalesScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Last 20 sales'),
       ),
-      body: _buildTransactionList(salesModel),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: salesModel.isEmpty
+            ? Center(
+                child: Text('No sales'),
+              )
+            : _buildTransactionList(salesModel),
+      ),
     );
   }
 

@@ -175,7 +175,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                                 quantityController.text)),
                                       ),
                                     );
-                                    await appProvider.getSales();
+                                    // await appProvider.getSales();
                                     if (!dialogContext.mounted) return;
 
                                     dialogContext.showCustomToast(

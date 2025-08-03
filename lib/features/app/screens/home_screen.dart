@@ -44,7 +44,11 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 30),
                     _buildGasBalance(provider),
                     const SizedBox(height: 30),
-                    _buildRecentTransactions(provider, context),
+                    provider.sales == null || provider.sales!.isEmpty
+                        ? Center(
+                            child: Text('No recent transactions'),
+                          )
+                        : _buildRecentTransactions(provider, context),
                   ],
                 ),
               ),
@@ -71,7 +75,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               TextSpan(text: 'Welcome '),
               TextSpan(
-                text: userModel.user?.name!,
+                text: userModel.user?.name ?? '',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -550,12 +554,12 @@ void _showSettingsDialog(BuildContext dialogContext) {
                         try {
                           await provider.saveBalance(
                             GasBalanceModel(
-                              totalPrice: getTotalPrice(price, quantity),
-                              createdAt: DateTime.now(),
-                              updatedAt: DateTime.now(),
-                              priceOfOneKg: price,
-                              quantityKg: quantity,
-                            ),
+                                totalPrice: getTotalPrice(price, quantity),
+                                createdAt: DateTime.now(),
+                                updatedAt: DateTime.now(),
+                                priceOfOneKg: price,
+                                quantityKg: quantity,
+                                totalSales: 0.0),
                           );
 
                           if (!dialogContext.mounted) return;

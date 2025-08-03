@@ -50,7 +50,7 @@ class AppRepository {
         .doc(sales.customersId)
         .update({'netSpend': newNetSale});
 
-    double totalSales = balance.totalSales! + sales.priceInNaira!;
+    double totalSales = (balance.totalSales ?? 0.0) + sales.priceInNaira!;
     await firestore
         .collection('GasBalance')
         .doc(balance.id)
