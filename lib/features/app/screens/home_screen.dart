@@ -508,7 +508,7 @@ void _showSettingsDialog(BuildContext dialogContext) {
                           quantityController,
                           "Quantity",
                           false,
-                          'Enter quantity of Gas',
+                          'Enter Gas in kg',
                         ),
                       ],
                     ),

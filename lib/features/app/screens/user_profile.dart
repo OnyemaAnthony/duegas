@@ -20,11 +20,20 @@ class userProfile extends StatelessWidget {
             child: CircularProgressIndicator(),
           );
         }
+
         return SafeArea(
           child: Column(
             children: [
               buildUserInfoHeader(context),
               buildSearchBar(context),
+              Builder(builder: (context) {
+                if (provider.customers!.isEmpty) {
+                  return Center(
+                    child: Text('No customers Added'),
+                  );
+                }
+                return Container();
+              }),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
