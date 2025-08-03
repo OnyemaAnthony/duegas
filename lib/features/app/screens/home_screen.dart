@@ -5,6 +5,7 @@ import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:duegas/features/app/screens/sales_screen.dart';
+import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -39,7 +40,7 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     _buildHeader(context),
                     const SizedBox(height: 30),
-                    _buildSalesCard(),
+                    _buildSalesCard(provider),
                     const SizedBox(height: 30),
                     _buildGasBalance(provider),
                     const SizedBox(height: 30),
@@ -55,20 +56,22 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final userModel =
+        Provider.of<AuthenticationProvider>(context, listen: false);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         RichText(
-          text: const TextSpan(
+          text: TextSpan(
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20,
               color: Colors.grey,
               fontFamily: 'SFProDisplay',
             ),
             children: [
               TextSpan(text: 'Welcome '),
               TextSpan(
-                text: 'Jude!',
+                text: userModel.user?.name!,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -92,7 +95,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSalesCard() {
+  Widget _buildSalesCard(AppProvider provider) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -105,7 +108,7 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Sales',
@@ -114,7 +117,7 @@ class DashboardScreen extends StatelessWidget {
                           fontSize: 22,
                           fontWeight: FontWeight.bold)),
                   SizedBox(height: 4),
-                  Text('₦6500.00',
+                  Text('₦${provider.gasBalance?.totalSales ?? 0.0}',
                       style: TextStyle(color: Colors.white70, fontSize: 16)),
                 ],
               ),
@@ -124,7 +127,7 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 30),
           SizedBox(
             height: 150,
-            child: _buildLineChart(),
+            child: _buildLineChart(provider),
           ),
         ],
       ),
@@ -165,33 +168,71 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLineChart() {
-    final List<FlSpot> spots = [
-      const FlSpot(0, 80),
-      const FlSpot(1, 210),
-      const FlSpot(2, 100),
-      const FlSpot(3, 180),
-      const FlSpot(4, 70),
-    ];
+  Widget _buildLineChart(AppProvider provider) {
+    // Get sales data and group by month
+    final sales = provider.sales ?? [];
+
+    // If no sales data, return an empty container with a message
+    if (sales.isEmpty) {
+      return Center(
+        child: Text(
+          'No sales data available',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    final monthlySales = <DateTime, double>{};
+    for (final sale in sales) {
+      final monthStart = DateTime(sale.createdAt!.year, sale.createdAt!.month);
+      monthlySales.update(
+        monthStart,
+        (total) => total + (sale.priceInNaira ?? 0),
+        ifAbsent: () => sale.priceInNaira ?? 0,
+      );
+    }
+
+    // Sort months chronologically
+    final sortedMonths = monthlySales.keys.toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    // Create spots for the chart
+    final spots = sortedMonths.asMap().entries.map((entry) {
+      final index = entry.key;
+      final month = entry.value;
+      final salesAmount = monthlySales[month] ?? 0;
+      return FlSpot(index.toDouble(), salesAmount);
+    }).toList();
+
+    // Find max sales amount for scaling (with minimum of 30,000)
+    final maxSalesAmount = monthlySales.values
+        .fold(0.0, (max, amount) => amount > max ? amount : max);
+    final maxY = maxSalesAmount > 30000 ? maxSalesAmount : 30000;
 
     return LineChart(
       LineChartData(
-        showingTooltipIndicators: [
-          ShowingTooltipIndicators([
-            LineBarSpot(
-              LineChartBarData(spots: spots),
-              0, // bar index
-              spots[3], // spot index
-            ),
-          ]),
-        ],
+        minX: 0,
+        maxX: spots.length > 0 ? spots.length - 1 : 0,
+        minY: 0,
+        maxY: maxY.toDouble(),
+        showingTooltipIndicators: spots.isNotEmpty
+            ? [
+                ShowingTooltipIndicators([
+                  LineBarSpot(
+                    LineChartBarData(spots: spots),
+                    0,
+                    spots.last,
+                  ),
+                ]),
+              ]
+            : [],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
             tooltipRoundedRadius: 8,
             getTooltipItems: (List<LineBarSpot> touchedSpots) {
               return touchedSpots.map((barSpot) {
                 return LineTooltipItem(
-                  '₦${barSpot.y.toInt()}',
+                  '₦${barSpot.y.toStringAsFixed(2)}',
                   const TextStyle(
                       color: Colors.black, fontWeight: FontWeight.bold),
                 );
@@ -213,29 +254,18 @@ class DashboardScreen extends StatelessWidget {
               reservedSize: 30,
               interval: 1,
               getTitlesWidget: (value, meta) {
-                const style = TextStyle(color: Colors.white54, fontSize: 12);
-                Widget text;
-                switch (value.toInt()) {
-                  case 0:
-                    text = const Text('Jan', style: style);
-                    break;
-                  case 1:
-                    text = const Text('Feb', style: style);
-                    break;
-                  case 2:
-                    text = const Text('Mar', style: style);
-                    break;
-                  case 3:
-                    text = const Text('Apr', style: style);
-                    break;
-                  case 4:
-                    text = const Text('May', style: style);
-                    break;
-                  default:
-                    text = const Text('', style: style);
-                    break;
+                if (value.toInt() >= sortedMonths.length || value.toInt() < 0) {
+                  return const Text('');
                 }
-                return Container();
+                final month = sortedMonths[value.toInt()];
+                final monthName = DateFormat('MMM').format(month);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    monthName,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                );
               },
             ),
           ),
@@ -251,7 +281,7 @@ class DashboardScreen extends StatelessWidget {
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, barData, index) {
-                if (index == 3) {
+                if (index == spots.length - 1) {
                   return FlDotCirclePainter(
                     radius: 6,
                     color: Colors.purple.shade200,
@@ -318,35 +348,6 @@ class DashboardScreen extends StatelessWidget {
                   ),
           ],
         ),
-        // Row(
-        //   children: [
-        //     ElevatedButton(
-        //       onPressed: () {},
-        //       style: ElevatedButton.styleFrom(
-        //         backgroundColor: Colors.green,
-        //         foregroundColor: Colors.white,
-        //         shape: RoundedRectangleBorder(
-        //             borderRadius: BorderRadius.circular(20)),
-        //         padding:
-        //             const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        //       ),
-        //       child: const Text('Refill'),
-        //     ),
-        //     const SizedBox(width: 8),
-        //     ElevatedButton(
-        //       onPressed: () {},
-        //       style: ElevatedButton.styleFrom(
-        //         backgroundColor: Colors.red,
-        //         foregroundColor: Colors.white,
-        //         shape: RoundedRectangleBorder(
-        //             borderRadius: BorderRadius.circular(20)),
-        //         padding:
-        //             const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        //       ),
-        //       child: const Text('Reset'),
-        //     ),
-        //   ],
-        // ),
       ],
     );
   }

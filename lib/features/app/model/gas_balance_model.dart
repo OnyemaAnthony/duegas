@@ -5,6 +5,7 @@ class GasBalanceModel {
   double? totalPrice;
   double? priceOfOneKg;
   double? quantityKg;
+  double? totalSales;
   DateTime? createdAt;
   DateTime? updatedAt;
 
@@ -12,6 +13,7 @@ class GasBalanceModel {
     this.id,
     this.totalPrice,
     this.priceOfOneKg,
+    this.totalSales,
     this.quantityKg,
     this.createdAt,
     this.updatedAt,
@@ -21,6 +23,7 @@ class GasBalanceModel {
     return GasBalanceModel(
       id: id,
       totalPrice: json['totalPrice'] as double?,
+      totalSales: json['totalSales'] as double?,
       priceOfOneKg: json['priceOfOneKg'] as double?,
       quantityKg: json['quantityKg'] as double?,
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
@@ -31,6 +34,7 @@ class GasBalanceModel {
   Map<String, dynamic> toJson() {
     return {
       'totalPrice': totalPrice,
+      'totalSales': totalSales,
       'priceOfOneKg': priceOfOneKg,
       'quantityKg': quantityKg,
       'createdAt': createdAt,

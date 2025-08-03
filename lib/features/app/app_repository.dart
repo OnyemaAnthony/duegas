@@ -49,6 +49,12 @@ class AppRepository {
         .collection('Customers')
         .doc(sales.customersId)
         .update({'netSpend': newNetSale});
+
+    double totalSales = balance.totalSales! + sales.priceInNaira!;
+    await firestore
+        .collection('GasBalance')
+        .doc(balance.id)
+        .update({'totalSales': totalSales});
   }
 
   Future<List<SalesModel>> getSales() async {
