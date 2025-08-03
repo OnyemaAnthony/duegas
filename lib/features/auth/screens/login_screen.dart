@@ -2,6 +2,7 @@ import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
+import 'package:duegas/features/auth/screens/sign_up_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -196,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
-                    print('Navigate to Sign Up');
+                    AppRouter.getPage(context, SignUpScreen());
                   }),
           ],
         ),

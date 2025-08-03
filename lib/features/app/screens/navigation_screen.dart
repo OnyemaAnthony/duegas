@@ -79,9 +79,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
         return Consumer<AppProvider>(builder: (context, provider, child) {
           if (provider.isLoading) {
             return Container();
-            // return Center(
-            //   child: CircularProgressIndicator(),
-            // );
           }
           return StatefulBuilder(
             builder: (context, setState) {
