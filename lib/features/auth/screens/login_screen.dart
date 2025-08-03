@@ -149,6 +149,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
       onPressed: () async {
+        if (_emailController.text.isEmpty) {
+          return context.showCustomToast(message: 'Email is required');
+        }
+        if (_passwordController.text.isEmpty) {
+          return context.showCustomToast(message: 'Password is required');
+        }
         try {
           final authProvider =
               Provider.of<AuthenticationProvider>(context, listen: false);
