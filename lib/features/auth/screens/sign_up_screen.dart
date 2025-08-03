@@ -1,5 +1,7 @@
+import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/extensions/ui_extension.dart';
 import 'package:duegas/core/utils/app_router.dart';
+import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/user_model.dart';
 import 'package:duegas/features/auth/screens/login_screen.dart';
@@ -102,7 +104,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   _buildDateField(),
                   const SizedBox(height: 20),
-                  _buildProceedButton(),
+                  _buildProceedButton(context),
                   const SizedBox(height: 20),
                   _buildLoginLink().onClick(() {
                     AppRouter.getPage(context, const LoginScreen());
@@ -174,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sex:',
+          'Gender:',
           style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
         ),
         const SizedBox(height: 8),
@@ -244,21 +246,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildProceedButton() {
+  Widget _buildProceedButton(BuildContext ctx) {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
+          if (_nameController.text.isEmpty) {
+            return context.showCustomToast(message: 'Name is required');
+          }
+          if (_emailController.text.isEmpty) {
+            return context.showCustomToast(message: 'Email is required');
+          }
+          if (sex.isEmpty) {
+            return context.showCustomToast(message: 'Gender is required');
+          }
+          if (_passwordController.text.isEmpty) {
+            return context.showCustomToast(message: 'Password is required');
+          }
+
+          if (_confirmPasswordController.text != _passwordController.text) {
+            return context.showCustomToast(message: 'Passwords does not match');
+          }
+          if (_dateController.text.isEmpty) {
+            return context.showCustomToast(
+                message: 'Date of birth is required');
+          }
           final authProvider =
               Provider.of<AuthenticationProvider>(context, listen: false);
-          authProvider.signUp(UserModel(
-            email: 'Anthony@gmail.com',
-            password: 'This.tony12345',
-            name: "Anthony",
-            dob: 'september 7,1999',
-            gender: 'M',
-          ));
+          try {
+            await authProvider.signUp(
+              UserModel(
+                  email: _emailController.text,
+                  password: _passwordController.text,
+                  name: _nameController.text,
+                  dob: _dateController.text,
+                  gender: sex,
+                  isAdmin: true),
+            );
+
+            if (!ctx.mounted) return;
+            ctx.showCustomToast(message: 'User created successfully');
+            AppRouter.pushReplace(ctx, NavigationScreen());
+          } catch (e) {
+            ctx.showCustomToast(message: e.toString());
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.black,
@@ -267,7 +299,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             borderRadius: BorderRadius.circular(8.0),
           ),
         ),
-        child: const Text('Proceed', style: TextStyle(fontSize: 16)),
+        child: const Text('Sign up', style: TextStyle(fontSize: 16)),
       ),
     );
   }

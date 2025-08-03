@@ -73,7 +73,8 @@ class AuthenticationProvider with ChangeNotifier {
     try {
       isLoading = true;
       notifyListeners();
-      repository!.createUserWithEmailAndPassword(userObject: userModel);
+      userModel = await repository!
+          .createUserWithEmailAndPassword(userObject: userModel);
     } catch (e) {
       error = AppError.exception(e);
       rethrow;

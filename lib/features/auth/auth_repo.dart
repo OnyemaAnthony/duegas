@@ -22,7 +22,7 @@ class AuthRepository {
     return UserModel.fromJson(user.data()!);
   }
 
-  Future<void> createUserWithEmailAndPassword(
+  Future<UserModel> createUserWithEmailAndPassword(
       {required UserModel userObject}) async {
     UserCredential user = await firebaseAuth.createUserWithEmailAndPassword(
         email: userObject.email!, password: userObject.password!);
@@ -30,6 +30,7 @@ class AuthRepository {
         .collection('Users')
         .doc(user.user?.uid)
         .set(userObject.toJson());
+    return await getUserById();
   }
 
   Future<void> signOut() async {
