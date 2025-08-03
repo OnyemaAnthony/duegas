@@ -54,6 +54,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       backgroundColor: Colors.white,
       body:
           Consumer<AuthenticationProvider>(builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
         return SafeArea(
           child: SingleChildScrollView(
             child: Padding(
@@ -281,6 +286,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   password: _passwordController.text,
                   name: _nameController.text,
                   dob: _dateController.text,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
                   gender: sex,
                   isAdmin: true),
             );

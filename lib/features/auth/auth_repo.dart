@@ -37,7 +37,6 @@ class AuthRepository {
     await firebaseAuth.signOut();
   }
 
-  // In your repository class
   Stream<List<CustomerModel>> getCustomers() {
     return firestore.collection('Customers').snapshots().map((snapshot) {
       return snapshot.docs
@@ -45,14 +44,11 @@ class AuthRepository {
           .toList();
     });
   }
-  // Future<List<CustomerModel>> getCustomers() async {
-  //   final snapshot = await firestore.collection('Customers').get();
-  //   return snapshot.docs
-  //       .map((doc) => CustomerModel.fromJson(doc.data()))
-  //       .toList();
-  // }
 
   Future<UserModel> getUserById() async {
+    if (firebaseAuth.currentUser == null) {
+      return UserModel();
+    }
     String id = firebaseAuth.currentUser!.uid;
     final user = await firestore.collection('Users').doc(id).get();
     return UserModel.fromJson(user.data()!);
