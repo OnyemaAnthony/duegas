@@ -5,6 +5,7 @@ import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:duegas/features/app/screens/home_screen.dart';
 import 'package:duegas/features/app/screens/user_profile.dart';
+import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/screens/customers_screen.dart';
 import 'package:flutter/material.dart';
@@ -129,6 +130,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                 setState(() {
                                   customer = customerModel;
                                 });
+                              }, () {
+                                // setState(() {
+                                //   customer.createdAt = null;
+                                // });
                               }),
                             const SizedBox(height: 20),
                             _buildTextField(
@@ -162,8 +167,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                         message: 'Select a price');
                                   }
                                   try {
+                                    final authProvider =
+                                        Provider.of<AuthenticationProvider>(
+                                            context,
+                                            listen: false);
                                     await appProvider.makeSales(
                                       SalesModel(
+                                        sellerId: authProvider.user!.id,
+                                        sellerName: authProvider.user!.name,
                                         createdAt: DateTime.now(),
                                         updatedAt: DateTime.now(),
                                         customersId: customer.id,
@@ -297,15 +308,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
-  void navigate() async {
-    CustomerModel customerModel =
-        await AppRouter.getPage(context, CustomersScreen());
-    setState(() {
-      customer = customerModel;
-    });
-  }
-
-  Widget _buildCustomerChip(Function() onTap) {
+  Widget _buildCustomerChip(Function() onTap, Function() onXTap) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -325,11 +328,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
               Text(customer.name!,
                   style: TextStyle(fontWeight: FontWeight.w500)),
             ],
-          ),
-          const Icon(Icons.close, size: 18),
+          )..onClick(onTap),
+          IconButton(
+              onPressed: onXTap,
+              icon: Icon(
+                Icons.close,
+                size: 18,
+              )),
         ],
       ),
-    ).onClick(onTap);
+    );
   }
 
   Widget _buildTextField(
