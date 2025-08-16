@@ -75,6 +75,8 @@ class MyApp extends StatelessWidget {
 
 
 
+
+
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 <PropertyGroup>
@@ -157,7 +159,7 @@ class MyApp extends StatelessWidget {
 <TreatWarningAsError>true</TreatWarningAsError>
 <UseFullPaths>false</UseFullPaths>
 <WarningLevel>Level4</WarningLevel>
-<PreprocessorDefinitions>WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;_DEBUG;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+<PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;_HAS_EXCEPTIONS=0;_DEBUG;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
 <ObjectFileName>$(IntDir)</ObjectFileName>
 </ClCompile>
 <ResourceCompile>
@@ -191,7 +193,7 @@ class MyApp extends StatelessWidget {
 <TreatWarningAsError>true</TreatWarningAsError>
 <UseFullPaths>false</UseFullPaths>
 <WarningLevel>Level4</WarningLevel>
-<PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Profile";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+<PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Profile";%(PreprocessorDefinitions)</PreprocessorDefinitions>
 <ObjectFileName>$(IntDir)</ObjectFileName>
 <DebugInformationFormat>
 </DebugInformationFormat>
@@ -227,7 +229,7 @@ class MyApp extends StatelessWidget {
 <TreatWarningAsError>true</TreatWarningAsError>
 <UseFullPaths>false</UseFullPaths>
 <WarningLevel>Level4</WarningLevel>
-<PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+<PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;_HAS_EXCEPTIONS=0;FLUTTER_PLUGIN_IMPL;INTERNAL_EXPERIMENTAL=1;UNICODE;_UNICODE;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
 <ObjectFileName>$(IntDir)</ObjectFileName>
 <DebugInformationFormat>
 </DebugInformationFormat>
