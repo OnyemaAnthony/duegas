@@ -77,6 +77,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        customer = CustomerModel();
         return Consumer<AppProvider>(builder: (context, provider, child) {
           if (provider.isLoading) {
             return Container();
@@ -131,9 +132,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                   customer = customerModel;
                                 });
                               }, () {
-                                // setState(() {
-                                //   customer.createdAt = null;
-                                // });
+                                setState(() {
+                                  customer = CustomerModel();
+                                });
                               }),
                             const SizedBox(height: 20),
                             _buildTextField(
@@ -153,10 +154,10 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                   ),
                                 ),
                                 onPressed: () async {
-                                  if (customer.createdAt == null) {
-                                    return dialogContext.showCustomToast(
-                                        message: 'Select a customer');
-                                  }
+                                  // if (customer.createdAt == null) {
+                                  //   return dialogContext.showCustomToast(
+                                  //       message: 'Select a customer');
+                                  // }
 
                                   if (quantityController.text.isEmpty) {
                                     return dialogContext.showCustomToast(
@@ -177,8 +178,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
                                         sellerName: authProvider.user!.name,
                                         createdAt: DateTime.now(),
                                         updatedAt: DateTime.now(),
-                                        customersId: customer.id,
-                                        customersName: customer.name,
+                                        customersId: customer.id ?? 'id',
+                                        customersName:
+                                            customer.name ?? 'Anonymous',
                                         quantityInKg: double.parse(
                                             quantityController.text),
                                         priceInNaira: oneKg *

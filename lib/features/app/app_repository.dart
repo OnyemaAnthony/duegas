@@ -39,16 +39,18 @@ class AppRepository {
     final customerDoc =
         await firestore.collection('Customers').doc(sales.customersId).get();
 
-    CustomerModel customer =
-        CustomerModel.fromJson(customerDoc.data()!, id: customerDoc.id);
-    double netSale = customer.netSpend ?? 0.0;
+    if (customerDoc.exists) {
+      CustomerModel customer =
+          CustomerModel.fromJson(customerDoc.data()!, id: customerDoc.id);
+      double netSale = customer.netSpend ?? 0.0;
 
-    double newNetSale = netSale + sales.priceInNaira!;
+      double newNetSale = netSale + sales.priceInNaira!;
 
-    await firestore
-        .collection('Customers')
-        .doc(sales.customersId)
-        .update({'netSpend': newNetSale});
+      await firestore
+          .collection('Customers')
+          .doc(sales.customersId)
+          .update({'netSpend': newNetSale});
+    }
 
     double totalSales = (balance.totalSales ?? 0.0) + sales.priceInNaira!;
     await firestore
