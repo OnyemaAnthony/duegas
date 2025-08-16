@@ -23,7 +23,8 @@ void main() async {
         measurementId: "G-HS3R0KHF18"),
   );
   // await Firebase.initializeApp();
-
+  trncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [C:\Users\Work\Desktop\learning dart\duegas\build\windows\x64\plugins\firebase_auth\firebase_auth_plugin.vcxproj]
+g
   runApp(
     MultiProvider(
       providers: [
