@@ -11,18 +11,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
-  // await Firebase.initializeApp(
-  //   options: const FirebaseOptions(
-  //     apiKey: "YOUR_API_KEY",
-  //     appId: "YOUR_APP_ID",
-  //     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  //     projectId: "YOUR_PROJECT_ID",
-  //     authDomain: "YOUR_AUTH_DOMAIN",
-  //     storageBucket: "YOUR_STORAGE_BUCKET",
-  //   ),
-  // );
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+        apiKey: "AIzaSyCiE7vB7f7T-NEeotsO42EwaIzbD5DPvnA",
+        authDomain: "duenergy-2c177.firebaseapp.com",
+        projectId: "duenergy-2c177",
+        storageBucket: "duenergy-2c177.firebasestorage.app",
+        messagingSenderId: "557671459064",
+        appId: "1:557671459064:web:64965d37307b0fa8d6730d",
+        measurementId: "G-HS3R0KHF18"),
+  );
+  // await Firebase.initializeApp();
 
   runApp(
     MultiProvider(
