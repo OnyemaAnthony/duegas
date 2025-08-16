@@ -7,6 +7,7 @@ import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:duegas/features/app/screens/sales_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
+import 'package:duegas/features/widgets/printing_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -450,6 +451,7 @@ class DashboardScreen extends StatelessWidget {
         itemCount: sales.length,
         itemBuilder: (context, index) {
           final sale = sales[index];
+          logger.d('message');
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0),
             child: Row(
@@ -479,7 +481,11 @@ class DashboardScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
-          );
+          ).onClick(() async {
+            final PrintingService service = PrintingService();
+
+            await service.printReceipt();
+          });
         });
   }
 }
