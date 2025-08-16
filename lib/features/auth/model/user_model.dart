@@ -31,6 +31,7 @@ class UserModel {
       name: json['name'] as String?,
       dob: json['dob'] as String?,
       gender: json['gender'] as String?,
+      isAdmin: json['isAdmin'] as bool?,
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (json['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -43,6 +44,7 @@ class UserModel {
       'name': name,
       'dob': dob,
       'gender': gender,
+      'isAdmin': isAdmin,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

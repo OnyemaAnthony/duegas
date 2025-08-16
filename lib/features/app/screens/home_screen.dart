@@ -1,6 +1,7 @@
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/extensions/ui_extension.dart';
 import 'package:duegas/core/utils/app_router.dart';
+import 'package:duegas/core/utils/logger.dart';
 import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
@@ -24,7 +25,9 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      body: Consumer<AppProvider>(builder: (context, provider, child) {
+      body: Consumer2<AppProvider, AuthenticationProvider>(
+          builder: (context, provider, authProvider, child) {
+        logger.d(authProvider.user?.toJson());
         if (provider.isLoading) {
           return Center(
             child: CircularProgressIndicator(),
@@ -42,7 +45,9 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 30),
                     _buildSalesCard(provider),
                     const SizedBox(height: 30),
-                    _buildGasBalance(provider),
+                    authProvider.user != null && authProvider.user!.isAdmin!
+                        ? _buildGasBalance(provider)
+                        : buildUserGasBalance(provider),
                     const SizedBox(height: 30),
                     provider.sales == null || provider.sales!.isEmpty
                         ? Center(
@@ -340,18 +345,76 @@ class DashboardScreen extends StatelessWidget {
                             (provider.gasBalance!.totalPrice),
                           ),
                         ),
-                        TextSpan(
-                          text: '',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
                       ],
                     ),
                   ),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 32,
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+                children: [
+                  TextSpan(
+                    text: provider.gasBalance!.quantityKg!.toInt().toString(),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'Kg',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget buildUserGasBalance(AppProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Gas balance',
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        provider.gasBalance == null
+            ? Text('No Gas')
+            : RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 32,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: provider.gasBalance!.quantityKg!.toInt().toString(),
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'Kg',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
       ],
     );
   }
