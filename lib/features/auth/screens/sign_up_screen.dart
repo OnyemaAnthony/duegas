@@ -333,13 +333,8 @@
 // }
 
 import 'package:duegas/core/extensions/toast_message.dart';
-// import 'package:duegas/core/extensions/ui_extension.dart'; // This extension is no longer needed for the login link
-import 'package:duegas/core/utils/app_router.dart';
-import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/user_model.dart';
-import 'package:duegas/features/auth/screens/login_screen.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -354,7 +349,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword1 = true;
   bool _obscurePassword2 = true;
-  String? _selectedGender; // Use a nullable type for the initial state
+  String? _selectedGender;
 
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -462,7 +457,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 32),
                       _buildProceedButton(context),
                       const SizedBox(height: 24),
-                      _buildLoginLink(),
                     ],
                   ),
                 ),
@@ -664,12 +658,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
                 gender: _selectedGender!,
-                isAdmin: false), // Defaulting isAdmin to false for signups
+                isAdmin: false),
           );
 
           if (!ctx.mounted) return;
           ctx.showCustomToast(message: 'Account created successfully!');
-          AppRouter.pushReplace(ctx, const NavigationScreen());
+          Navigator.of(ctx).pop();
         } catch (e) {
           ctx.showCustomToast(message: e.toString());
         }
@@ -680,33 +674,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoginLink() {
-    return Align(
-      alignment: Alignment.center,
-      child: RichText(
-        text: TextSpan(
-          text: 'Already have an account? ',
-          style: const TextStyle(color: Colors.grey, fontSize: 14),
-          children: <TextSpan>[
-            TextSpan(
-              text: 'Login',
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                decoration: TextDecoration.underline,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  AppRouter.getPage(context, const LoginScreen());
-                },
-            ),
-          ],
         ),
       ),
     );

@@ -1,117 +1,113 @@
-// lib/printing_service.dart
-
+import 'package:duegas/features/app/model/sales_model.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class PrintingService {
-  Future<void> printReceipt() async {
+  Future<void> printReceipt(SalesModel sale) async {
     final doc = pw.Document();
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'en_NG', symbol: '₦');
 
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.roll57,
         build: (pw.Context context) {
           return pw.Container(
-            padding: const pw.EdgeInsets.all(10),
+            padding: const pw.EdgeInsets.all(8),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
+                // --- Header ---
                 pw.Text(
                   'Sales Receipt',
                   style: pw.TextStyle(
                       fontSize: 16, fontWeight: pw.FontWeight.bold),
                 ),
-                pw.SizedBox(height: 10),
-                pw.Text("Due gas limited",
+                pw.SizedBox(height: 12),
+                pw.Text("Due Gas Limited",
                     style: pw.TextStyle(
                         fontSize: 12, fontWeight: pw.FontWeight.bold)),
-                pw.Text("Abia state", style: const pw.TextStyle(fontSize: 10)),
-                pw.Text('Tel: 090388943094',
+                pw.Text(
+                    "Opposite water board afara umuahia, Abia State, Nigeria",
                     style: const pw.TextStyle(fontSize: 10)),
-                pw.SizedBox(height: 10),
-                pw.Divider(),
+                pw.Text('Tel: +234 708 132 8997',
+                    style: const pw.TextStyle(fontSize: 10)),
+                pw.SizedBox(height: 12),
+
+                pw.Divider(height: 1, borderStyle: pw.BorderStyle.dashed),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 6),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Receipt No:',
+                          style: const pw.TextStyle(fontSize: 9)),
+                      pw.Text(sale.id!.substring(0, 8).toUpperCase(),
+                          style: pw.TextStyle(
+                              fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                ),
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('Receipt No: 101',
+                    pw.Text('Date:', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                        DateFormat('dd MMM yyyy, hh:mm a')
+                            .format(sale.createdAt!),
                         style: const pw.TextStyle(fontSize: 9)),
-                    // pw.Text(
-                    //     '${data.dateTime.year}-${data.dateTime.month}-${data.dateTime.day} ${data.dateTime.hour}:${data.dateTime.minute}',
-                    //     style: const pw.TextStyle(fontSize: 9)
-                    // ),
                   ],
                 ),
-                pw.Divider(),
-                pw.SizedBox(height: 10),
-
-                if (true)
-                  pw.Container(
-                      decoration: pw.BoxDecoration(
-                          border: pw.Border.all(), color: PdfColors.yellow100),
-                      padding: const pw.EdgeInsets.all(5),
-                      child: pw.Text('First-Time Customer',
-                          style: const pw.TextStyle(fontSize: 9))),
-
-                pw.SizedBox(height: 15),
-
-                // Table Header
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Expanded(
-                        flex: 3,
-                        child: pw.Text('Item',
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(
-                        flex: 1,
-                        child: pw.Text('Qty',
-                            textAlign: pw.TextAlign.center,
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(
-                        flex: 2,
-                        child: pw.Text('Price',
-                            textAlign: pw.TextAlign.right,
-                            style:
-                                pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                    pw.Text('Sold by:', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Text(sale.sellerName!,
+                        style: const pw.TextStyle(fontSize: 9)),
                   ],
                 ),
-                pw.Divider(thickness: 1.5),
+                pw.Divider(height: 1, borderStyle: pw.BorderStyle.dashed),
+                pw.SizedBox(height: 16),
 
-                // Table Row
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Expanded(flex: 3, child: pw.Text('Product Sale')),
-                    pw.Expanded(
-                        flex: 1,
-                        child: pw.Text(20.toString(),
-                            textAlign: pw.TextAlign.center)),
-                    pw.Expanded(
-                        flex: 2,
-                        child: pw.Text('1000', textAlign: pw.TextAlign.right)),
-                  ],
+                _buildTableHeader(),
+                pw.Divider(thickness: 1),
+                _buildTableRow(
+                  'Gas Sale',
+                  '${sale.quantityInKg} Kg',
+                  currencyFormatter.format(sale.priceInNaira),
                 ),
-                pw.Divider(thickness: 1.5),
-                pw.SizedBox(height: 10),
+                pw.Divider(thickness: 1),
+                pw.SizedBox(height: 12),
 
-                // Total
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.end,
                   children: [
                     pw.Text('Total: ',
                         style: pw.TextStyle(
                             fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('1000',
-                        style: pw.TextStyle(
-                            fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(
+                      currencyFormatter.format(sale.priceInNaira),
+                      style: pw.TextStyle(
+                          fontSize: 14, fontWeight: pw.FontWeight.bold),
+                    ),
                   ],
                 ),
-                pw.SizedBox(height: 20),
-                pw.Text('Thanks for the patronage!',
+                pw.SizedBox(height: 24),
+                pw.Text('Thanks for your patronage!',
                     style: pw.TextStyle(fontStyle: pw.FontStyle.italic)),
+                pw.SizedBox(height: 8),
+
+                pw.BarcodeWidget(
+                  barcode: pw.Barcode.qrCode(),
+                  data: sale.id!,
+                  width: 50,
+                  height: 50,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text('Scan to verify',
+                    style: const pw.TextStyle(fontSize: 8)),
               ],
             ),
           );
@@ -119,10 +115,46 @@ class PrintingService {
       ),
     );
 
-    // This is the important part for web.
-    // It will open the browser's print dialog.
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => doc.save(),
+    );
+  }
+
+  pw.Widget _buildTableHeader() {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Expanded(
+            flex: 3,
+            child: pw.Text('Item',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+        pw.Expanded(
+            flex: 2,
+            child: pw.Text('Qty',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+        pw.Expanded(
+            flex: 2,
+            child: pw.Text('Price',
+                textAlign: pw.TextAlign.right,
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+      ],
+    );
+  }
+
+  pw.Widget _buildTableRow(String item, String qty, String price) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Expanded(flex: 3, child: pw.Text(item)),
+          pw.Expanded(
+              flex: 2, child: pw.Text(qty, textAlign: pw.TextAlign.center)),
+          pw.Expanded(
+              flex: 2, child: pw.Text(price, textAlign: pw.TextAlign.right)),
+        ],
+      ),
     );
   }
 }

@@ -22,8 +22,6 @@ void main() async {
         appId: "1:557671459064:web:64965d37307b0fa8d6730d",
         measurementId: "G-HS3R0KHF18"),
   );
-  // await Firebase.initializeApp();
-
   runApp(
     MultiProvider(
       providers: [

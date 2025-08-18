@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:duegas/core/utils/error.dart';
-import 'package:duegas/core/utils/logger.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/model/user_model.dart';
@@ -73,8 +72,7 @@ class AuthenticationProvider with ChangeNotifier {
     try {
       isLoading = true;
       notifyListeners();
-      user = await repository!
-          .createUserWithEmailAndPassword(userObject: userModel);
+      await repository!.createUserWithEmailAndPassword(userObject: userModel);
     } catch (e) {
       error = AppError.exception(e);
       rethrow;
@@ -90,7 +88,6 @@ class AuthenticationProvider with ChangeNotifier {
       notifyListeners();
       user = await repository!
           .signInWithEmailAndPassword(email: email, password: password);
-      logger.d(user?.toJson());
     } catch (e) {
       error = AppError.exception(e);
       rethrow;
