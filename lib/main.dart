@@ -69,5 +69,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// https://aistudio.google.com/u/0/prompts/new_chat

@@ -222,6 +222,7 @@ class _NavigationScreenState extends State<NavigationScreen>
                                   final sale = appProvider.sales!.first;
 
                                   await service.printReceipt(sale);
+                                  if (!dialogContext.mounted) return;
 
                                   Navigator.of(dialogContext).pop();
                                 } catch (e) {
@@ -383,7 +384,6 @@ class _NavigationScreenState extends State<NavigationScreen>
   Widget build(BuildContext context) {
     final authProvider =
         Provider.of<AuthenticationProvider>(context, listen: false);
-    logger.d(authProvider.user?.toJson());
 
     return Scaffold(
       body: LayoutBuilder(
@@ -476,9 +476,10 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   @override
   void afterFirstLayout(BuildContext context) async {
-    logger.d('messagehh');
     final authProvider =
         Provider.of<AuthenticationProvider>(context, listen: false);
     await authProvider.loadUser();
+    logger.d('authProvider.user?.toJson()');
+    logger.d(authProvider.user?.toJson());
   }
 }
