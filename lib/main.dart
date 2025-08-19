@@ -4,7 +4,7 @@ import 'package:duegas/features/app/app_repository.dart';
 import 'package:duegas/features/app/screens/navigation_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
-import 'package:duegas/features/auth/screens/sign_up_screen.dart';
+import 'package:duegas/features/auth/screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -65,7 +65,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         primaryColor: Colors.black,
       ),
-      home: user == null ? const SignUpScreen() : const NavigationScreen(),
+      home: user == null ? const LoginScreen() : const NavigationScreen(),
     );
   }
 }
