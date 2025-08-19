@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:duegas/core/utils/logger.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
@@ -16,6 +17,8 @@ class AppRepository {
         .snapshots()
         .map((snapshot) {
       final doc = snapshot.docs.first;
+      logger.d(doc.data());
+
       return GasBalanceModel.fromJson(doc.data(), id: doc.id);
     });
   }

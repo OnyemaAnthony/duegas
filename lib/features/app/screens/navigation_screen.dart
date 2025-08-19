@@ -1,7 +1,6 @@
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/after_layout.dart';
 import 'package:duegas/core/utils/app_router.dart';
-import 'package:duegas/core/utils/logger.dart';
 import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:duegas/features/app/screens/home_screen.dart';
@@ -479,7 +478,5 @@ class _NavigationScreenState extends State<NavigationScreen>
     final authProvider =
         Provider.of<AuthenticationProvider>(context, listen: false);
     await authProvider.loadUser();
-    logger.d('authProvider.user?.toJson()');
-    logger.d(authProvider.user?.toJson());
   }
 }
