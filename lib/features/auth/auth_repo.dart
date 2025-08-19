@@ -19,7 +19,7 @@ class AuthRepository {
         .signInWithEmailAndPassword(email: email, password: password);
     DocumentSnapshot<Map<String, dynamic>> user =
         await firestore.collection('Users').doc(userCredential.user?.uid).get();
-    return UserModel.fromJson(user.data()!);
+    return UserModel.fromJson(user.data()!, user.id);
   }
 
   Future<UserModel> createUserWithEmailAndPassword(
@@ -51,7 +51,7 @@ class AuthRepository {
     }
     String id = firebaseAuth.currentUser!.uid;
     final user = await firestore.collection('Users').doc(id).get();
-    return UserModel.fromJson(user.data()!);
+    return UserModel.fromJson(user.data()!, user.id);
   }
 
   Future<void> saveCustomer(CustomerModel customer) async {

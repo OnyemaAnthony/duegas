@@ -23,9 +23,9 @@ class UserModel {
     this.createdAt,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  factory UserModel.fromJson(Map<String, dynamic> json, String? id) {
     return UserModel(
-      id: json['id'] as String?,
+      id: id ?? json['id'] as String?,
       email: json['email'] as String?,
       password: json['password'] as String?,
       name: json['name'] as String?,
