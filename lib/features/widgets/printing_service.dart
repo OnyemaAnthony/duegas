@@ -103,7 +103,7 @@ class PrintingService {
                   barcode: pw.Barcode.qrCode(),
                   data: sale.id!,
                   width: 50,
-                  height: 50,
+                  height: 30,
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text('Scan to verify',
