@@ -262,11 +262,11 @@ class AppProvider with ChangeNotifier {
     }
   }
 
-  Future<void> saveBalance(GasBalanceModel balance) async {
+  Future<void> saveBalance(GasBalanceModel balance, String docId) async {
     try {
       isLoading = true;
       notifyListeners();
-      await repository.saveGasBalance(balance);
+      await repository.saveGasBalance(balance, docId);
     } catch (e) {
       error = AppError.exception(e);
       rethrow;

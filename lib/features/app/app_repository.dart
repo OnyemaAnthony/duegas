@@ -111,8 +111,11 @@ class AppRepository {
     });
   }
 
-  Future<void> saveGasBalance(GasBalanceModel balance) async {
-    await firestore.collection('GasBalance').add(balance.toJson());
+  Future<void> saveGasBalance(GasBalanceModel balance, String docId) async {
+    await firestore
+        .collection('GasBalance')
+        .doc(docId)
+        .update(balance.toJson());
   }
 
   Future<void> makeSale(GasBalanceModel balance, SalesModel sales) async {
