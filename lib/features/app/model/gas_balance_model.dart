@@ -6,6 +6,7 @@ class GasBalanceModel {
   double? priceOfOneKg;
   double? quantityKg;
   double? totalSales;
+  int? minimumPointForRewards;
   DateTime? createdAt;
   DateTime? updatedAt;
 
@@ -14,6 +15,7 @@ class GasBalanceModel {
     this.totalPrice,
     this.priceOfOneKg,
     this.totalSales,
+    this.minimumPointForRewards,
     this.quantityKg,
     this.createdAt,
     this.updatedAt,
@@ -26,6 +28,7 @@ class GasBalanceModel {
       totalSales: json['totalSales'] as double?,
       priceOfOneKg: json['priceOfOneKg'] as double?,
       quantityKg: json['quantityKg'] as double?,
+      minimumPointForRewards: json['minimumPointForRewards'] as int,
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (json['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -37,6 +40,7 @@ class GasBalanceModel {
       'totalSales': totalSales,
       'priceOfOneKg': priceOfOneKg,
       'quantityKg': quantityKg,
+      'minimumPointForRewards': minimumPointForRewards ?? 10,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duegas/core/utils/error.dart';
 import 'package:duegas/features/auth/auth_repo.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
@@ -11,7 +12,7 @@ class AuthenticationProvider with ChangeNotifier {
   bool isLoading = false;
   UserModel? user;
   AppError? error;
-  List<CustomerModel>? customers;
+  // List<CustomerModel>? customers; // REMOVED DUPLICATE
   StreamSubscription? _customerSubscription;
 
   AuthenticationProvider(this.repository) {
@@ -19,25 +20,84 @@ class AuthenticationProvider with ChangeNotifier {
     loadUser();
   }
 
-  void _loadCustomers() async {
+  // Pagination State
+  List<CustomerModel> _customers = [];
+  List<CustomerModel>? get customers => _customers;
+
+  DocumentSnapshot? _lastCustomerDoc;
+  bool _hasMoreCustomers = true;
+  bool _isFetchingMoreCustomers = false;
+  String? _currentSearchQuery;
+
+  bool get isFetchingMoreCustomers => _isFetchingMoreCustomers;
+  bool get hasMoreCustomers => _hasMoreCustomers;
+
+  // Initial fetch or search
+  Future<void> getCustomers({String? query, bool refresh = false}) async {
     try {
+      if (refresh) {
+        _customers = [];
+        _lastCustomerDoc = null;
+        _hasMoreCustomers = true;
+      }
+
       isLoading = true;
+      _currentSearchQuery = query;
       notifyListeners();
-      _customerSubscription = repository?.getCustomers().listen(
-        (customerList) {
-          customers = customerList;
-          error = null;
-          isLoading = false;
-          notifyListeners();
-        },
+
+      final result = await repository!.fetchCustomers(
+        limit: 10,
+        searchQuery: query,
       );
+
+      _customers = result['customers'];
+      _lastCustomerDoc = result['lastDoc'];
+      _hasMoreCustomers = (result['customers'] as List).length == 10;
+      error = null;
     } catch (e) {
       error = AppError.exception(e);
-      rethrow;
+      // Don't rethrow here to avoid crashing UI, just show error state
     } finally {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Load more for pagination
+  Future<void> getMoreCustomers() async {
+    if (_isFetchingMoreCustomers || !_hasMoreCustomers) return;
+
+    try {
+      _isFetchingMoreCustomers = true;
+      notifyListeners();
+
+      final result = await repository!.fetchCustomers(
+        lastDoc: _lastCustomerDoc,
+        limit: 10,
+        searchQuery: _currentSearchQuery,
+      );
+
+      final newCustomers = result['customers'] as List<CustomerModel>;
+      _customers.addAll(newCustomers);
+      _lastCustomerDoc = result['lastDoc'];
+
+      // If we got fewer items than the limit, we've reached the end
+      if (newCustomers.length < 10) {
+        _hasMoreCustomers = false;
+      }
+
+      error = null;
+    } catch (e) {
+      error = AppError.exception(e);
+    } finally {
+      _isFetchingMoreCustomers = false;
+      notifyListeners();
+    }
+  }
+
+  void _loadCustomers() {
+    // Initial load
+    getCustomers();
   }
 
   Future<void> loadUser() async {

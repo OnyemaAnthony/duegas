@@ -5,6 +5,7 @@ class CustomerModel {
   String? id;
   String? phoneNumber;
   double? netSpend;
+  double? points;
   bool? hasBirthday;
   DateTime? dob;
   DateTime? createdAt;
@@ -15,6 +16,7 @@ class CustomerModel {
     this.name,
     this.phoneNumber,
     this.netSpend,
+    this.points,
     this.dob,
     this.hasBirthday,
     this.createdAt,
@@ -27,6 +29,7 @@ class CustomerModel {
       name: json['name'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
       netSpend: (json['netSpend'] as num?)?.toDouble(),
+      points: (json['points'] as num?)?.toDouble() ?? 0.0,
       hasBirthday: json['hasBirthday'] as bool? ?? false,
       dob: (json['dob'] as Timestamp?)?.toDate(),
       createdAt: (json['createdAt'] as Timestamp?)?.toDate(),
@@ -40,6 +43,7 @@ class CustomerModel {
       'phoneNumber': phoneNumber,
       'dob': dob,
       'netSpend': netSpend,
+      'points': points ?? 0.0,
       'hasBirthday': hasBirthday ?? false,
       'createdAt': createdAt,
       'updatedAt': updatedAt,

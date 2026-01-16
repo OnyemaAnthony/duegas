@@ -137,13 +137,14 @@ class AppRepository {
       CustomerModel customer =
           CustomerModel.fromJson(customerDoc.data()!, id: customerDoc.id);
       double netSale = customer.netSpend ?? 0.0;
-
       double newNetSale = netSale + sales.priceInNaira!;
+      // Points accrued = 1 point per kg (supports decimals)
+      double pointsEarned = sales.quantityInKg ?? 0.0;
 
-      await firestore
-          .collection('Customers')
-          .doc(sales.customersId)
-          .update({'netSpend': newNetSale});
+      await firestore.collection('Customers').doc(sales.customersId).update({
+        'netSpend': newNetSale,
+        'points': FieldValue.increment(pointsEarned),
+      });
     }
 
     double totalSales = (balance.totalSales ?? 0.0) + sales.priceInNaira!;
@@ -196,5 +197,59 @@ class AppRepository {
       logger.e('Error fetching sales by date range: $e');
       rethrow;
     }
+  }
+
+  Future<void> redeemPoints({
+    required String customerId,
+    required double pointsToRedeem,
+    required double gasAmountKg,
+    required GasBalanceModel currentBalance,
+  }) async {
+    return firestore.runTransaction((transaction) async {
+      // 1. READ: Get fresh customer data
+      DocumentReference customerRef =
+          firestore.collection('Customers').doc(customerId);
+      DocumentSnapshot customerSnap = await transaction.get(customerRef);
+
+      // 2. READ: Get fresh Gas Balance (Must be done before any writes)
+      DocumentReference balanceRef =
+          firestore.collection('GasBalance').doc(currentBalance.id);
+      DocumentSnapshot balanceSnap = await transaction.get(balanceRef);
+
+      // 3. LOGIC & VALIDATION
+      if (!customerSnap.exists) throw Exception("Customer does not exist!");
+      if (!balanceSnap.exists) throw Exception("Gas Balance not found!");
+
+      CustomerModel customer =
+          CustomerModel.fromJson(customerSnap.data() as Map<String, dynamic>);
+      double currentPoints = customer.points ?? 0.0;
+      double currentKg = balanceSnap.get('quantityKg') ?? 0.0;
+
+      if (currentPoints < pointsToRedeem) {
+        throw Exception("Insufficient points for redemption!");
+      }
+
+      // 4. WRITES
+      // A. Decrease points
+      transaction
+          .update(customerRef, {'points': currentPoints - pointsToRedeem});
+
+      // B. Deduct inventory
+      transaction.update(balanceRef, {'quantityKg': currentKg - gasAmountKg});
+
+      // C. Record the "Free" Sale
+      DocumentReference salesRef = firestore.collection('Sales').doc();
+      final sale = SalesModel(
+        id: salesRef.id,
+        customersId: customerId,
+        customersName: customer.name ?? 'Unknown',
+        quantityInKg: gasAmountKg,
+        priceInNaira: 0.0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      transaction.set(salesRef, sale.toJson());
+    });
   }
 }

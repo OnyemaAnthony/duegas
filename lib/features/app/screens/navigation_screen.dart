@@ -27,7 +27,7 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   static final List<Widget> _widgetOptions = <Widget>[
     DashboardScreen(),
-    const userProfile(),
+    const UserProfile(),
   ];
 
   void _onItemTapped(int index) {
@@ -216,7 +216,8 @@ class _NavigationScreenState extends State<NavigationScreen>
                                   await appProvider.getSales();
                                   if (!dialogContext.mounted) return;
                                   dialogContext.showCustomToast(
-                                      message: 'Sale recorded successfully');
+                                      message:
+                                          'Sale recorded! Earned ${quantitySold.toStringAsFixed(1)} points.');
                                   final service = PrintingService();
                                   final sale = appProvider.sales!.first;
 

@@ -37,12 +37,38 @@ class AuthRepository {
     await firebaseAuth.signOut();
   }
 
-  Stream<List<CustomerModel>> getCustomers() {
-    return firestore.collection('Customers').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => CustomerModel.fromJson(doc.data(), id: doc.id))
-          .toList();
-    });
+  Future<Map<String, dynamic>> fetchCustomers({
+    DocumentSnapshot? lastDoc,
+    int limit = 10,
+    String? searchQuery,
+  }) async {
+    Query query = firestore.collection('Customers').orderBy('name');
+
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      // Case-insensitive search by enforcing lowercase
+      final queryLower = searchQuery.toLowerCase();
+
+      query = query
+          .where('name', isGreaterThanOrEqualTo: queryLower)
+          .where('name', isLessThan: queryLower + 'z');
+    }
+
+    if (lastDoc != null) {
+      query = query.startAfterDocument(lastDoc);
+    }
+
+    query = query.limit(limit);
+
+    final snapshot = await query.get();
+    final customers = snapshot.docs
+        .map((doc) => CustomerModel.fromJson(doc.data() as Map<String, dynamic>,
+            id: doc.id))
+        .toList();
+
+    return {
+      'customers': customers,
+      'lastDoc': snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+    };
   }
 
   Future<UserModel> getUserById() async {

@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
+import 'package:duegas/core/utils/redemption_dialog.dart';
+import 'package:duegas/features/app/app_provider.dart';
+import 'package:duegas/features/app/screens/customer_details_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:duegas/features/auth/screens/login_screen.dart';
@@ -7,8 +11,61 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class userProfile extends StatelessWidget {
-  const userProfile({super.key});
+class UserProfile extends StatefulWidget {
+  const UserProfile({super.key});
+
+  @override
+  State<UserProfile> createState() => _UserProfileState();
+}
+
+class _UserProfileState extends State<UserProfile> {
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    final provider =
+        Provider.of<AuthenticationProvider>(context, listen: false);
+
+    // Initial fetch, reusing the same logic as CustomersScreen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      provider.getCustomers(refresh: true);
+    });
+
+    _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _scrollController.dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final provider =
+        Provider.of<AuthenticationProvider>(context, listen: false);
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      provider.getMoreCustomers();
+    }
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final provider =
+          Provider.of<AuthenticationProvider>(context, listen: false);
+      provider.getCustomers(query: _searchController.text, refresh: true);
+    });
+  }
+
+  CustomerModel? _selectedCustomer;
 
   @override
   Widget build(BuildContext context) {
@@ -16,206 +73,349 @@ class userProfile extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       body:
           Consumer<AuthenticationProvider>(builder: (context, provider, child) {
-        if (provider.isLoading) {
+        if (provider.isLoading &&
+            (provider.customers == null || provider.customers!.isEmpty)) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 960),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Card(
-                elevation: 2.0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      buildUserInfoHeader(context),
-                      const Divider(height: 32),
-                      buildSearchBar(context),
-                      const SizedBox(height: 16),
-                      if (provider.customers == null ||
-                          provider.customers!.isEmpty)
-                        _buildEmptyState()
-                      else
-                        _buildCustomerDataTable(context, provider.customers!),
-                    ],
+        if (provider.error != null &&
+            (provider.customers == null || provider.customers!.isEmpty)) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error loading customers',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  provider.error.toString(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    provider.getCustomers(refresh: true);
+                  },
+                  child: const Text('Retry'),
+                )
+              ],
+            ),
+          );
+        }
+
+        return LayoutBuilder(builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 900;
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1600),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Card(
+                  elevation: 2.0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: isWide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // LEFT PANEL: List
+                              Expanded(
+                                flex: 4,
+                                child: Column(
+                                  children: [
+                                    _buildUserInfoHeader(context),
+                                    const Divider(height: 32),
+                                    _buildSearchBar(context),
+                                    const SizedBox(height: 16),
+                                    if (provider.customers == null ||
+                                        provider.customers!.isEmpty)
+                                      Expanded(child: _buildEmptyState())
+                                    else
+                                      Expanded(
+                                          child: _buildCustomerList(
+                                              context, provider, true)),
+                                  ],
+                                ),
+                              ),
+                              const VerticalDivider(width: 32, thickness: 1),
+                              // RIGHT PANEL: Details
+                              Expanded(
+                                flex: 6,
+                                child: _selectedCustomer == null
+                                    ? const Center(
+                                        child: Text(
+                                          "Select a customer to view details",
+                                          style: TextStyle(color: Colors.grey),
+                                        ),
+                                      )
+                                    : CustomerDetailsContent(
+                                        customer: _selectedCustomer!),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              _buildUserInfoHeader(context),
+                              const Divider(height: 32),
+                              _buildSearchBar(context),
+                              const SizedBox(height: 16),
+                              if (provider.customers == null ||
+                                  provider.customers!.isEmpty)
+                                Expanded(child: _buildEmptyState())
+                              else
+                                Expanded(
+                                    child: _buildCustomerList(
+                                        context, provider, false)),
+                            ],
+                          ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
+          );
+        });
       }),
     );
   }
-}
 
-Widget buildUserInfoHeader(BuildContext context) {
-  final userModel =
-      Provider.of<AuthenticationProvider>(context, listen: false).user;
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: Row(
+  Widget _buildUserInfoHeader(BuildContext context) {
+    final userModel =
+        Provider.of<AuthenticationProvider>(context, listen: false).user;
+    // Handle case where user might be null lightly, though logic suggests it shouldn't be
+    if (userModel == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.grey[300],
+            child: Text(userModel.name?.isNotEmpty == true
+                ? userModel.name!.split('').first.toUpperCase()
+                : 'U'),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                userModel.name ?? 'User',
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                userModel.email ?? '',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Tooltip(
+            message: 'Logout',
+            child: IconButton(
+              icon: const Icon(Icons.exit_to_app, color: Colors.redAccent),
+              onPressed: () async {
+                final authProvider =
+                    Provider.of<AuthenticationProvider>(context, listen: false);
+                await authProvider.logout();
+                if (context.mounted) {
+                  AppRouter.pushReplace(context, const LoginScreen());
+                }
+              },
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.grey[200],
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Row(
       children: [
-        CircleAvatar(
-          radius: 30,
-          child: Text(userModel!.name!.split('').first.toUpperCase()),
+        Expanded(
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search Customers',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.grey[200],
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            ),
+          ),
         ),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              userModel.name!,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              userModel.email!,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
-        ),
-        const Spacer(),
         Tooltip(
-          message: 'Logout',
-          child: IconButton(
-            icon: const Icon(Icons.exit_to_app, color: Colors.redAccent),
-            onPressed: () async {
-              final authProvider =
-                  Provider.of<AuthenticationProvider>(context, listen: false);
-              await authProvider.logout();
-              if (context.mounted) {
-                AppRouter.pushReplace(context, const LoginScreen());
-              }
-            },
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey[200],
+          message: 'Add New Customer',
+          child: FilledButton.icon(
+            onPressed: () => _showNewCustomerDialog(context),
+            icon: const Icon(Icons.add),
+            label: const Text('New Customer'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
             ),
           ),
-        ),
+        )
       ],
-    ),
-  );
-}
+    );
+  }
 
-Widget buildSearchBar(BuildContext context) {
-  return Row(
-    children: [
-      Expanded(
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search Customers',
-            prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: Colors.grey[200],
-            contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          ),
-        ),
-      ),
-      const SizedBox(width: 16),
-      Tooltip(
-        message: 'Add New Customer',
-        child: FilledButton.icon(
-          onPressed: () => _showNewCustomerDialog(context),
-          icon: const Icon(Icons.add),
-          label: const Text('New Customer'),
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-          ),
-        ),
-      )
-    ],
-  );
-}
-
-Widget _buildEmptyState() {
-  return const Padding(
-    padding: EdgeInsets.symmetric(vertical: 48.0),
-    child: Center(
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 60, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
+          const Icon(Icons.people_outline, size: 60, color: Colors.grey),
+          const SizedBox(height: 16),
+          const Text(
             'No Customers Found',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             'Click "New Customer" to add your first one.',
             style: TextStyle(color: Colors.grey),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildCustomerDataTable(
-    BuildContext context, List<CustomerModel> customers) {
-  final currencyFormatter = NumberFormat.currency(locale: 'en_NG', symbol: '₦');
+  Widget _buildCustomerList(
+      BuildContext context, AuthenticationProvider provider, bool isWide) {
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'en_NG', symbol: '₦');
+    final appProvider = Provider.of<AppProvider>(context);
+    final minPoints = appProvider.gasBalance?.minimumPointForRewards ?? 10;
 
-  return SizedBox(
-    width: double.infinity,
-    child: DataTable(
-      columnSpacing: 20,
-      columns: const [
-        DataColumn(
-            label: Text('Customer',
-                style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(
-            label: Text('Join Date',
-                style: TextStyle(fontWeight: FontWeight.bold))),
-        DataColumn(
-            label: Text('Net Spend',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            numeric: true),
-      ],
-      rows: customers.map((customer) {
-        return DataRow(
-          cells: [
-            // Customer Cell
-            DataCell(
-              Row(
+    return ListView.builder(
+      controller: _scrollController,
+      // Add one more item for the loading spinner or spacing at the bottom
+      itemCount:
+          provider.customers!.length + (provider.hasMoreCustomers ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == provider.customers!.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final customer = provider.customers![index];
+        final points = customer.points ?? 0.0;
+        final isEligible = points >= minPoints;
+        final isSelected = _selectedCustomer?.id == customer.id;
+
+        // Using a similar style to DataTable but in a ListView for infinite scroll
+        return Column(
+          children: [
+            ListTile(
+              selected: isWide && isSelected,
+              selectedTileColor: Colors.blue.withOpacity(0.1),
+              onTap: () {
+                if (isWide) {
+                  setState(() {
+                    _selectedCustomer = customer;
+                  });
+                } else {
+                  AppRouter.getPage(
+                      context, CustomerDetailsScreen(customer: customer));
+                }
+              },
+              leading: CircleAvatar(
+                radius: 20,
+                backgroundColor:
+                    isEligible ? Colors.green[100] : Colors.grey[200],
+                // Safely handle null name
+                child: Text(customer.name?.isNotEmpty == true
+                    ? customer.name!.split('').first.toUpperCase()
+                    : '?'),
+              ),
+              title: Text(customer.name ?? 'Unknown',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey[200],
-                    child: Text(customer.name!.split('').first.toUpperCase()),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(customer.name!),
+                  Text(
+                      "Join Date: ${DateFormat('dd MMM yyyy').format(customer.createdAt ?? DateTime.now())}"),
+                  if (!isWide) // Only show bars in list if not wide, to save space? Or stick to existing logic.
+                    Row(
+                      children: [
+                        Icon(Icons.stars, size: 16, color: Colors.amber[800]),
+                        const SizedBox(width: 4),
+                        Text("$points Points",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber[900])),
+                        const SizedBox(width: 8),
+                        if (isEligible)
+                          const Chip(
+                            label: Text("Eligible",
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.white)),
+                            backgroundColor: Colors.green,
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                          )
+                      ],
+                    ),
+                  if (!isWide && (points > 0)) // Only show progress if needed
+                    LinearProgressIndicator(
+                      value: (points / minPoints).clamp(0.0, 1.0),
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          isEligible ? Colors.green : Colors.amber),
+                    ),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(currencyFormatter.format(customer.netSpend ?? 0),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14)),
+                  // Provide redeem button in list only if mobile, or both?
+                  // If master-detail, redemption is on right.
+                  // But redundancy is fine.
+                  if (isEligible) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.redeem, color: Colors.green),
+                      tooltip: "Redeem Rewards",
+                      onPressed: () =>
+                          showRedemptionDialog(context, customer, minPoints),
+                    )
+                  ]
                 ],
               ),
             ),
-            // Join Date Cell
-            DataCell(
-              Text(DateFormat('dd MMM yyyy').format(customer.createdAt!)),
-            ),
-            // Net Spend Cell
-            DataCell(
-              Text(currencyFormatter.format(customer.netSpend ?? 0)),
-            ),
+            const Divider(height: 1),
           ],
         );
-      }).toList(),
-    ),
-  );
+      },
+    );
+  }
 }
 
 // --- DIALOG (NOW RESPONSIVE AND WITH BETTER VALIDATION) ---
