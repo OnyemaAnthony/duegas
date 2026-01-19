@@ -1,5 +1,6 @@
 import 'package:duegas/core/utils/redemption_dialog.dart';
 import 'package:duegas/features/app/app_provider.dart';
+import 'package:duegas/features/app/screens/reward_history_list.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -25,19 +26,33 @@ class CustomerDetailsScreen extends StatelessWidget {
   }
 }
 
-class CustomerDetailsContent extends StatelessWidget {
+class CustomerDetailsContent extends StatefulWidget {
   final CustomerModel customer;
 
   const CustomerDetailsContent({super.key, required this.customer});
 
   @override
+  State<CustomerDetailsContent> createState() => _CustomerDetailsContentState();
+}
+
+class _CustomerDetailsContentState extends State<CustomerDetailsContent> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.customer.id != null) {
+        context.read<AppProvider>().getRewardHistory(widget.customer.id!);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final appProvider = context.watch<AppProvider>();
-    final minPoints = appProvider.gasBalance?.minimumPointForRewards ?? 10;
+    // final appProvider = context.watch<AppProvider>(); // Removed if not needed elsewhere
     final currencyFormatter =
         NumberFormat.currency(locale: 'en_NG', symbol: '₦');
-    final points = customer.points ?? 0.0;
-    final isEligible = points >= minPoints;
+    final points = widget.customer.points ?? 0.0;
+    final isEligible = points > 0;
 
     return SingleChildScrollView(
       child: Center(
@@ -62,8 +77,11 @@ class CustomerDetailsContent extends StatelessWidget {
                           backgroundColor:
                               isEligible ? Colors.green[100] : Colors.grey[200],
                           child: Text(
-                            customer.name?.isNotEmpty == true
-                                ? customer.name!.split('').first.toUpperCase()
+                            widget.customer.name?.isNotEmpty == true
+                                ? widget.customer.name!
+                                    .split('')
+                                    .first
+                                    .toUpperCase()
                                 : '?',
                             style: TextStyle(
                                 fontSize: 40,
@@ -75,7 +93,7 @@ class CustomerDetailsContent extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          customer.name ?? 'Unknown Customer',
+                          widget.customer.name ?? 'Unknown Customer',
                           style: const TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold),
                           textAlign: TextAlign.center,
@@ -84,8 +102,9 @@ class CustomerDetailsContent extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Chip(
-                              label: const Text("Eligible for Reward",
-                                  style: TextStyle(color: Colors.white)),
+                              label: Text(
+                                  "Balance: ${currencyFormatter.format(points)}",
+                                  style: const TextStyle(color: Colors.white)),
                               backgroundColor: Colors.green,
                               padding: EdgeInsets.zero,
                               visualDensity: VisualDensity.compact,
@@ -109,7 +128,7 @@ class CustomerDetailsContent extends StatelessWidget {
                                       size: 32, color: Colors.amber[800]),
                                   const SizedBox(width: 8),
                                   Text(
-                                    "$points Points",
+                                    currencyFormatter.format(points),
                                     style: TextStyle(
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold,
@@ -118,21 +137,12 @@ class CustomerDetailsContent extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: (points / minPoints).clamp(0.0, 1.0),
-                                backgroundColor: Colors.amber[100],
-                                color: Colors.green,
-                                minHeight: 10,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                isEligible
-                                    ? "Ready to redeem!"
-                                    : "${(minPoints - points).toStringAsFixed(1)} more points to reach reward",
+                              const Text(
+                                "Cash Value Reward",
                                 style: TextStyle(
-                                    color: Colors.amber[900],
-                                    fontStyle: FontStyle.italic),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey),
                               ),
                               const SizedBox(height: 16),
                               SizedBox(
@@ -140,7 +150,7 @@ class CustomerDetailsContent extends StatelessWidget {
                                 child: ElevatedButton.icon(
                                   onPressed: isEligible
                                       ? () => showRedemptionDialog(
-                                          context, customer, minPoints)
+                                          context, widget.customer)
                                       : null,
                                   icon: const Icon(Icons.redeem),
                                   label: const Text("Redeem Rewards"),
@@ -195,7 +205,7 @@ class CustomerDetailsContent extends StatelessWidget {
                         child: _buildInfoCard(
                           icon: Icons.phone,
                           title: "Phone Number",
-                          value: customer.phoneNumber,
+                          value: widget.customer.phoneNumber,
                         ),
                       ),
                       SizedBox(
@@ -203,8 +213,9 @@ class CustomerDetailsContent extends StatelessWidget {
                         child: _buildInfoCard(
                           icon: Icons.calendar_today,
                           title: "Date of Birth",
-                          value: customer.dob != null
-                              ? DateFormat('dd MMM yyyy').format(customer.dob!)
+                          value: widget.customer.dob != null
+                              ? DateFormat('dd MMM yyyy')
+                                  .format(widget.customer.dob!)
                               : null,
                         ),
                       ),
@@ -213,9 +224,9 @@ class CustomerDetailsContent extends StatelessWidget {
                         child: _buildInfoCard(
                           icon: Icons.access_time,
                           title: "Joined",
-                          value: customer.createdAt != null
+                          value: widget.customer.createdAt != null
                               ? DateFormat('dd MMM yyyy')
-                                  .format(customer.createdAt!)
+                                  .format(widget.customer.createdAt!)
                               : null,
                         ),
                       ),
@@ -224,13 +235,28 @@ class CustomerDetailsContent extends StatelessWidget {
                         child: _buildInfoCard(
                           icon: Icons.attach_money,
                           title: "Total Net Spend",
-                          value:
-                              currencyFormatter.format(customer.netSpend ?? 0),
+                          value: currencyFormatter
+                              .format(widget.customer.netSpend ?? 0),
                         ),
                       ),
                     ],
                   );
                 }),
+                const SizedBox(height: 32),
+                // --- REWARD HISTORY ---
+                Text(
+                  "Reward History",
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800]),
+                ),
+                const SizedBox(height: 16),
+                Consumer<AppProvider>(
+                  builder: (context, provider, child) {
+                    return RewardHistoryList(history: provider.rewardHistory);
+                  },
+                ),
               ],
             ),
           ),

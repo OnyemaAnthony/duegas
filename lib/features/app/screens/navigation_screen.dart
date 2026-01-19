@@ -47,7 +47,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     }
 
     final double rate = oneKg;
-    final formKey = GlobalKey<FormState>();
+    // final formKey = GlobalKey<FormState>();
 
     final TextEditingController quantityController = TextEditingController();
     final TextEditingController priceController = TextEditingController();
@@ -112,7 +112,7 @@ class _NavigationScreenState extends State<NavigationScreen>
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
                   child: Form(
-                    key: formKey,
+                    // key: formKey, // Removed to avoid Duplicate GlobalKey error
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(24),
                       child: Column(

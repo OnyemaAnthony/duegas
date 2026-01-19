@@ -3,16 +3,13 @@ import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-void showRedemptionDialog(
-    BuildContext context, CustomerModel customer, int minPoints) {
-  final double currentPoints = customer.points ?? 0.0;
-  final int rewardBlocks = (currentPoints / minPoints).floor();
-  final double redeemablePoints = (rewardBlocks * minPoints).toDouble();
-  final double remainingPoints = currentPoints - redeemablePoints;
-  // Assuming 1 point = 1 KG of gas reward
-  final double rewardGasKg = redeemablePoints;
+void showRedemptionDialog(BuildContext context, CustomerModel customer) {
+  final double currentPointsValue = customer.points ?? 0.0;
+  final NumberFormat currencyFormat =
+      NumberFormat.currency(locale: 'en_NG', symbol: '₦');
 
   showDialog(
     context: context,
@@ -26,18 +23,15 @@ void showRedemptionDialog(
             Text("Customer: ${customer.name ?? 'Unknown'}",
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildSummaryRow("Total Points:", "$currentPoints"),
-            _buildSummaryRow(
-                "Minimum for Reward:", "$minPoints points (= $minPoints KG)"),
-            const Divider(),
-            _buildSummaryRow("Redeemable Points:",
-                "${redeemablePoints.toInt()} ($rewardBlocks rewards)",
+            const Text(
+              "Rewards are now cash value! You can redeem your entire balance to pay for gas.",
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            _buildSummaryRow("Total Reward Balance:",
+                currencyFormat.format(currentPointsValue),
                 isHighlight: true),
-            _buildSummaryRow("Reward (Gas):", "${rewardGasKg.toInt()} KG",
-                isHighlight: true),
             const Divider(),
-            _buildSummaryRow("Remaining Points:",
-                remainingPoints.toStringAsFixed(remainingPoints == 0 ? 0 : 1)),
           ],
         ),
         actions: [
@@ -48,7 +42,7 @@ void showRedemptionDialog(
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green, foregroundColor: Colors.white),
-            onPressed: redeemablePoints > 0
+            onPressed: currentPointsValue > 0
                 ? () async {
                     final appProvider =
                         Provider.of<AppProvider>(context, listen: false);
@@ -61,13 +55,12 @@ void showRedemptionDialog(
                     try {
                       await appProvider.redeemPoints(
                         customerId: customer.id!,
-                        pointsToRedeem: redeemablePoints,
-                        gasAmountKg: rewardGasKg,
                       );
 
                       if (context.mounted) {
                         context.showCustomToast(
-                            message: "Redemption successful!");
+                            message:
+                                "Redemption successful! Value deducted from inventory.");
                         authProvider.getCustomers(refresh: true);
                       }
                     } catch (e) {
@@ -76,8 +69,8 @@ void showRedemptionDialog(
                       }
                     }
                   }
-                : null, // Disable if 0 redeemable
-            child: const Text("Redeem"),
+                : null, // Disable if 0 balance
+            child: const Text("Redeem Full Balance"),
           ),
         ],
       );

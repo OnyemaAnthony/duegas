@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:duegas/core/extensions/toast_message.dart';
 import 'package:duegas/core/utils/app_router.dart';
 import 'package:duegas/core/utils/redemption_dialog.dart';
-import 'package:duegas/features/app/app_provider.dart';
 import 'package:duegas/features/app/screens/customer_details_screen.dart';
 import 'package:duegas/features/auth/auth_provider.dart';
 import 'package:duegas/features/auth/model/customer_model.dart';
@@ -306,8 +305,8 @@ class _UserProfileState extends State<UserProfile> {
       BuildContext context, AuthenticationProvider provider, bool isWide) {
     final currencyFormatter =
         NumberFormat.currency(locale: 'en_NG', symbol: '₦');
-    final appProvider = Provider.of<AppProvider>(context);
-    final minPoints = appProvider.gasBalance?.minimumPointForRewards ?? 10;
+    // final appProvider = Provider.of<AppProvider>(context); // Removed if not needed
+    // final minPoints = appProvider.gasBalance?.minimumPointForRewards ?? 10;
 
     return ListView.builder(
       controller: _scrollController,
@@ -324,7 +323,7 @@ class _UserProfileState extends State<UserProfile> {
 
         final customer = provider.customers![index];
         final points = customer.points ?? 0.0;
-        final isEligible = points >= minPoints;
+        final isEligible = points > 0;
         final isSelected = _selectedCustomer?.id == customer.id;
 
         // Using a similar style to DataTable but in a ListView for infinite scroll
@@ -359,34 +358,29 @@ class _UserProfileState extends State<UserProfile> {
                 children: [
                   Text(
                       "Join Date: ${DateFormat('dd MMM yyyy').format(customer.createdAt ?? DateTime.now())}"),
-                  if (!isWide) // Only show bars in list if not wide, to save space? Or stick to existing logic.
+                  if (!isWide &&
+                      (points >
+                          0)) // Only show bars in list if not wide, to save space? Or stick to existing logic.
                     Row(
                       children: [
                         Icon(Icons.stars, size: 16, color: Colors.amber[800]),
                         const SizedBox(width: 4),
-                        Text("$points Points",
+                        Text(currencyFormatter.format(points),
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.amber[900])),
                         const SizedBox(width: 8),
-                        if (isEligible)
-                          const Chip(
-                            label: Text("Eligible",
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.white)),
-                            backgroundColor: Colors.green,
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                          )
+                        const Chip(
+                          label: Text("Reward",
+                              style:
+                                  TextStyle(fontSize: 10, color: Colors.white)),
+                          backgroundColor: Colors.green,
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        )
                       ],
                     ),
-                  if (!isWide && (points > 0)) // Only show progress if needed
-                    LinearProgressIndicator(
-                      value: (points / minPoints).clamp(0.0, 1.0),
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          isEligible ? Colors.green : Colors.amber),
-                    ),
+                  // Progress bar removed as it's not applicable for open-ended rewards
                 ],
               ),
               trailing: Row(
@@ -403,8 +397,7 @@ class _UserProfileState extends State<UserProfile> {
                     IconButton(
                       icon: const Icon(Icons.redeem, color: Colors.green),
                       tooltip: "Redeem Rewards",
-                      onPressed: () =>
-                          showRedemptionDialog(context, customer, minPoints),
+                      onPressed: () => showRedemptionDialog(context, customer),
                     )
                   ]
                 ],

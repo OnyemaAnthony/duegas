@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:duegas/core/utils/error.dart';
 import 'package:duegas/features/app/app_repository.dart';
 import 'package:duegas/features/app/model/gas_balance_model.dart';
+import 'package:duegas/features/app/model/reward_history_model.dart';
 import 'package:duegas/features/app/model/sales_model.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +20,9 @@ class AppProvider with ChangeNotifier {
   // New properties for date filtering
   List<SalesModel> _filteredSales = [];
   List<SalesModel> get filteredSales => _filteredSales;
+
+  List<RewardHistoryModel> _rewardHistory = [];
+  List<RewardHistoryModel> get rewardHistory => _rewardHistory;
 
   String _selectedFilter = '7D'; // Default filter
   String get selectedFilter => _selectedFilter;
@@ -92,11 +96,11 @@ class AppProvider with ChangeNotifier {
     }
   }
 
-  Future<void> saveBalance(GasBalanceModel balance, String docId) async {
+  Future<void> saveBalance(GasBalanceModel balance, {String? docId}) async {
     try {
       isLoading = true;
       notifyListeners();
-      await repository.saveGasBalance(balance, docId);
+      await repository.saveGasBalance(balance, docId: docId);
     } catch (e) {
       error = AppError.exception(e);
       rethrow;
@@ -158,8 +162,6 @@ class AppProvider with ChangeNotifier {
 
   Future<void> redeemPoints({
     required String customerId,
-    required double pointsToRedeem,
-    required double gasAmountKg,
   }) async {
     try {
       isLoading = true;
@@ -168,16 +170,29 @@ class AppProvider with ChangeNotifier {
 
       await repository.redeemPoints(
         customerId: customerId,
-        pointsToRedeem: pointsToRedeem,
-        gasAmountKg: gasAmountKg,
         currentBalance: gasBalance!,
       );
+
+      // Refresh history if we are currently viewing it for this customer
+      await getRewardHistory(customerId);
     } catch (e) {
       error = AppError.exception(e);
       rethrow;
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> getRewardHistory(String userId) async {
+    try {
+      // Don't set global isLoading to avoid full screen loader if just switching tabs
+      final history = await repository.getRewardHistory(userId);
+      _rewardHistory = history;
+      notifyListeners();
+    } catch (e) {
+      error = AppError.exception(e);
+      // Don't rethrow, just log/show error state
     }
   }
 

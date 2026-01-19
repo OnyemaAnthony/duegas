@@ -39,12 +39,39 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24.0),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    if (constraints.maxWidth > 960) {
-                      return _buildWideLayout(context, provider, authProvider);
-                    } else {
-                      return _buildNarrowLayout(
-                          context, provider, authProvider);
-                    }
+                    final isWide = constraints.maxWidth > 960;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context, authProvider),
+                        const SizedBox(height: 24),
+                        _buildStatsGrid(context, provider, isWide),
+                        const SizedBox(height: 24),
+                        if (isWide)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child:
+                                    _buildRevenueChartCard(context, provider),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                flex: 1,
+                                child: _buildGasLevelCard(provider),
+                              ),
+                            ],
+                          )
+                        else ...[
+                          _buildRevenueChartCard(context, provider),
+                          const SizedBox(height: 24),
+                          _buildGasLevelCard(provider),
+                        ],
+                        const SizedBox(height: 24),
+                        _buildRecentTransactionsCard(provider, context),
+                      ],
+                    );
                   },
                 ),
               ),
@@ -52,59 +79,6 @@ class DashboardScreen extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-
-  /// Layout for wide screens (desktops)
-  Widget _buildWideLayout(BuildContext context, AppProvider provider,
-      AuthenticationProvider authProvider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(context, authProvider),
-        const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: _buildSalesCard(context, provider),
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  authProvider.user!.isAdmin!
-                      ? _buildGasBalanceCard(provider)
-                      : _buildUserGasBalanceCard(provider),
-                  const SizedBox(height: 24),
-                  _buildRecentTransactionsCard(provider, context),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Layout for narrow screens (mobile)
-  Widget _buildNarrowLayout(BuildContext context, AppProvider provider,
-      AuthenticationProvider authProvider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(context, authProvider),
-        const SizedBox(height: 24),
-        _buildSalesCard(context, provider),
-        const SizedBox(height: 24),
-        authProvider.user!.isAdmin!
-            ? _buildGasBalanceCard(provider)
-            : _buildUserGasBalanceCard(provider),
-        const SizedBox(height: 24),
-        _buildRecentTransactionsCard(provider, context),
-      ],
     );
   }
 
@@ -127,342 +101,250 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
-        Tooltip(
-          message: 'Settings',
-          child: IconButton(
-            onPressed: () {
-              if (!authProvider.user!.isAdmin!) {
-                return context.showCustomToast(
-                    message: 'Please contact the Admin');
-              }
-              _showSettingsDialog(context);
-            },
-            icon: const Icon(Icons.settings_outlined, color: Colors.black54),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+        if (authProvider.user!.isAdmin!)
+          Tooltip(
+            message: 'Settings',
+            child: IconButton(
+              onPressed: () {
+                _showSettingsDialog(context);
+              },
+              icon: const Icon(Icons.settings_outlined, color: Colors.black54),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildSalesCard(BuildContext context, AppProvider provider) {
-    return Card(
-      color: Colors.black,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Total Sales',
-                        style: TextStyle(color: Colors.white70, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text(
-                        currencyFormatter.format(
-                            provider.totalFilteredSales), // Use filtered total
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                _buildTimeFilter(context, provider),
-              ],
-            ),
-            const SizedBox(height: 30),
-            SizedBox(height: 150, child: _buildLineChart(provider)),
-          ],
-        ),
+  // --- STATS GRID ---
+  Widget _buildStatsGrid(
+      BuildContext context, AppProvider provider, bool isWide) {
+    // Totals
+    final totalRevenue = provider.totalFilteredSales;
+    final totalTransactions = provider.filteredSales.length;
+    final avgTransaction =
+        totalTransactions > 0 ? totalRevenue / totalTransactions : 0.0;
+    // Current Gas
+    final currentGas = provider.gasBalance?.quantityKg ?? 0.0;
+
+    final stats = [
+      _StatItem(
+        title: "Total Revenue",
+        value: currencyFormatter.format(totalRevenue),
+        icon: Icons.attach_money,
+        color: Colors.green,
       ),
-    );
+      _StatItem(
+        title: "Current Gas",
+        value: "${currentGas.toStringAsFixed(1)} Kg",
+        icon: Icons.local_gas_station,
+        color: Colors.blue,
+      ),
+      _StatItem(
+        title: "Transactions",
+        value: "$totalTransactions",
+        icon: Icons.receipt_long,
+        color: Colors.orange,
+      ),
+      _StatItem(
+        title: "Avg. Sale",
+        value: currencyFormatter.format(avgTransaction),
+        icon: Icons.analytics,
+        color: Colors.purple,
+      ),
+    ];
+
+    return isWide
+        ? Row(
+            children: stats
+                .map((stat) => Expanded(
+                        child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: _buildStatCard(stat),
+                    )))
+                .toList(),
+          )
+        : Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: stats
+                .map((stat) => SizedBox(
+                      width: (1000 - 48) / 2, // Approximate for mobile
+                      child: _buildStatCard(stat),
+                    ))
+                .toList(),
+          );
   }
 
-  Widget _buildTimeFilter(BuildContext context, AppProvider provider) {
+  Widget _buildStatCard(_StatItem stat) {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: Colors.grey.shade800, borderRadius: BorderRadius.circular(20)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFilterButton(context, '1D', provider),
-          _buildFilterButton(context, '7D', provider),
-          _buildFilterButton(context, '30D', provider),
-          _buildDatePickerButton(context, provider),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: stat.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(stat.icon, color: stat.color, size: 20),
+              ),
+              // Optionally add a trend indicator here
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(stat.value,
+              style:
+                  const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(stat.title,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13)),
         ],
       ),
     );
   }
 
-  Widget _buildFilterButton(
-      BuildContext context, String text, AppProvider provider) {
-    bool isSelected = provider.selectedFilter == text;
-    return GestureDetector(
-      onTap: () => provider.fetchSalesByFilter(text),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.grey.shade600 : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(text,
-            style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white54,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+  // --- REVENUE CHART ---
+  Widget _buildRevenueChartCard(BuildContext context, AppProvider provider) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
-    );
-  }
-
-  Widget _buildDatePickerButton(BuildContext context, AppProvider provider) {
-    bool isSelected = provider.selectedFilter == 'Custom';
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: context,
-          initialDate: provider.customDate ?? DateTime.now(),
-          firstDate: DateTime(2020),
-          lastDate: DateTime.now(),
-        );
-        if (picked != null) {
-          provider.fetchSalesByFilter('Custom', date: picked);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.grey.shade600 : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today,
-                size: 14, color: isSelected ? Colors.white : Colors.white54),
-            const SizedBox(width: 4),
-            Text(
-              isSelected && provider.customDate != null
-                  ? DateFormat('MMM d').format(provider.customDate!)
-                  : 'Date',
-              style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white54,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLineChart(AppProvider provider) {
-    final sales = provider.filteredSales;
-    if (sales.isEmpty) {
-      return const Center(
-          child: Text('No sales data for this period',
-              style: TextStyle(color: Colors.white54)));
-    }
-
-    final Map<DateTime, double> aggregatedSales = {};
-    final String filter = provider.selectedFilter;
-
-    // Aggregate sales data based on the selected filter
-    if (filter == '1D' || filter == 'Custom') {
-      // Aggregate by hour
-      for (final sale in sales) {
-        final hourStart = DateTime(sale.createdAt!.year, sale.createdAt!.month,
-            sale.createdAt!.day, sale.createdAt!.hour);
-        aggregatedSales.update(
-            hourStart, (total) => total + (sale.priceInNaira ?? 0),
-            ifAbsent: () => sale.priceInNaira ?? 0);
-      }
-    } else {
-      // Aggregate by day for '7D' and '30D'
-      for (final sale in sales) {
-        final dayStart = DateTime(
-            sale.createdAt!.year, sale.createdAt!.month, sale.createdAt!.day);
-        aggregatedSales.update(
-            dayStart, (total) => total + (sale.priceInNaira ?? 0),
-            ifAbsent: () => sale.priceInNaira ?? 0);
-      }
-    }
-
-    final sortedDates = aggregatedSales.keys.toList()..sort();
-
-    final spots = sortedDates.asMap().entries.map((entry) {
-      final index = entry.key;
-      final date = entry.value;
-      final salesAmount = aggregatedSales[date] ?? 0;
-      return FlSpot(index.toDouble(), salesAmount);
-    }).toList();
-
-    final maxSalesAmount = aggregatedSales.values
-        .fold(0.0, (max, amount) => amount > max ? amount : max);
-    final maxY = maxSalesAmount > 10000 ? maxSalesAmount * 1.2 : 10000;
-
-    return LineChart(LineChartData(
-        minX: 0,
-        maxX: spots.length > 1 ? spots.length.toDouble() - 1 : 1,
-        minY: 0,
-        maxY: maxY.toDouble(),
-        lineTouchData: LineTouchData(touchTooltipData:
-            LineTouchTooltipData(getTooltipItems: (touchedSpots) {
-          return touchedSpots
-              .map((barSpot) => LineTooltipItem(
-                  '₦${barSpot.y.toStringAsFixed(0)}',
-                  const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.bold)))
-              .toList();
-        })),
-        gridData: const FlGridData(show: false),
-        titlesData: FlTitlesData(
-            leftTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      if (value.toInt() >= sortedDates.length ||
-                          value.toInt() < 0) return const SizedBox();
-
-                      final date = sortedDates[value.toInt()];
-                      String title;
-
-                      switch (filter) {
-                        case '1D':
-                        case 'Custom':
-                          title = DateFormat('ha').format(date); // e.g., 6AM
-                          break;
-                        case '7D':
-                          title = DateFormat('EEE').format(date); // e.g., Mon
-                          break;
-                        case '30D':
-                          title = DateFormat('d').format(date); // e.g., 15
-                          break;
-                        default:
-                          title = '';
-                      }
-                      return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(title,
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 12)));
-                    }))),
-        borderData: FlBorderData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              color: Colors.white,
-              barWidth: 4,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.0)
-                  ], begin: Alignment.topCenter, end: Alignment.bottomCenter)))
-        ]));
-  }
-
-  Widget _buildGasBalanceCard(AppProvider provider) {
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Gas Balance',
-                style: TextStyle(color: Colors.grey, fontSize: 16)),
-            const SizedBox(height: 8),
-            if (provider.gasBalance == null)
-              const Text('Not Set',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${provider.gasBalance!.quantityKg!.toStringAsFixed(1)} ',
-                    style: const TextStyle(
-                        fontSize: 32,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold),
+                  Text("Revenue Analysis",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text("Sales performance over time",
+                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                ],
+              ),
+              _buildTimeFilter(context, provider),
+            ],
+          ),
+          const SizedBox(height: 32),
+          SizedBox(height: 300, child: _buildLineChart(provider)),
+        ],
+      ),
+    );
+  }
+
+  // --- GAS LEVEL CARD ---
+  Widget _buildGasLevelCard(AppProvider provider) {
+    final current = provider.gasBalance?.quantityKg ?? 0.0;
+    // Assuming a max capacity for the progress bar visuals, or logic to handle scale
+    // Since we don't have 'maxCapacity' in model, let's treat 'current + totalSales' roughly or just visual
+    // For now, let's just make it look good. Ideally, user sets 'max capacity'.
+    // Let's assume 1000kg visual max, or 100% full if no max known is weird.
+    // Better: Just show the visual bar relative to some reasonable max (e.g. 1000 or current * 1.5)
+    final double visualMax = (current < 100) ? 100 : current * 1.2;
+    final double percent = (current / visualMax).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Gas Monitor",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(provider.gasBalance != null ? "Active Inventory" : "Not Set",
+              style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          const SizedBox(height: 32),
+          Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: CircularProgressIndicator(
+                    value: percent,
+                    strokeWidth: 12,
+                    backgroundColor: Colors.grey[100],
+                    color: current < 50 ? Colors.red : Colors.blue,
                   ),
-                  const Text('Kg',
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-            const SizedBox(height: 4),
-            Text(
-              'Value: ${currencyFormatter.format(provider.gasBalance?.totalPrice ?? 0)}',
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserGasBalanceCard(AppProvider provider) {
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Gas Balance',
-                style: TextStyle(color: Colors.grey, fontSize: 16)),
-            const SizedBox(height: 8),
-            if (provider.gasBalance == null)
-              const Text('Not Set',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                      '${provider.gasBalance!.quantityKg!.toStringAsFixed(1)} ',
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "${current.toStringAsFixed(1)}",
                       style: const TextStyle(
-                          fontSize: 32, fontWeight: FontWeight.bold)),
-                  const Text('Kg',
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold)),
-                ],
+                          fontSize: 28, fontWeight: FontWeight.bold),
+                    ),
+                    const Text("Kg Available",
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12)),
+                  ],
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Value:", style: TextStyle(color: Colors.grey[600])),
+              Text(
+                currencyFormatter.format(provider.gasBalance?.totalPrice ?? 0),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
+  // --- RECENT TRANSACTIONS ---
   Widget _buildRecentTransactionsCard(
       AppProvider provider, BuildContext context) {
     return Card(
@@ -502,19 +384,220 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  // ... (Keep existing _buildTimeFilter, _buildFilterButton, _buildDatePickerButton, _buildLineChart logic but update chart styling/colors) ...
+  // Re-implementing chart to be cleaner for white bg
+
+  Widget _buildTimeFilter(BuildContext context, AppProvider provider) {
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildFilterButton(context, '1D', provider),
+          _buildFilterButton(context, '7D', provider),
+          _buildFilterButton(context, '30D', provider),
+          _buildDatePickerButton(context, provider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(
+      BuildContext context, String text, AppProvider provider) {
+    bool isSelected = provider.selectedFilter == text;
+    return GestureDetector(
+      onTap: () => provider.fetchSalesByFilter(text),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.black : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(text,
+            style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12)),
+      ),
+    );
+  }
+
+  Widget _buildDatePickerButton(BuildContext context, AppProvider provider) {
+    bool isSelected = provider.selectedFilter == 'Custom';
+    return GestureDetector(
+      onTap: () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: provider.customDate ?? DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+        );
+        if (picked != null) {
+          provider.fetchSalesByFilter('Custom', date: picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.black : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today,
+                size: 14, color: isSelected ? Colors.white : Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(
+              isSelected && provider.customDate != null
+                  ? DateFormat('MMM d').format(provider.customDate!)
+                  : 'Date',
+              style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey[600],
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLineChart(AppProvider provider) {
+    final sales = provider.filteredSales;
+    if (sales.isEmpty) {
+      return const Center(
+          child: Text('No sales data for this period',
+              style: TextStyle(color: Colors.grey)));
+    }
+
+    final Map<DateTime, double> aggregatedSales = {};
+    final String filter = provider.selectedFilter;
+
+    if (filter == '1D' || filter == 'Custom') {
+      for (final sale in sales) {
+        final hourStart = DateTime(sale.createdAt!.year, sale.createdAt!.month,
+            sale.createdAt!.day, sale.createdAt!.hour);
+        aggregatedSales.update(
+            hourStart, (total) => total + (sale.priceInNaira ?? 0),
+            ifAbsent: () => sale.priceInNaira ?? 0);
+      }
+    } else {
+      for (final sale in sales) {
+        final dayStart = DateTime(
+            sale.createdAt!.year, sale.createdAt!.month, sale.createdAt!.day);
+        aggregatedSales.update(
+            dayStart, (total) => total + (sale.priceInNaira ?? 0),
+            ifAbsent: () => sale.priceInNaira ?? 0);
+      }
+    }
+
+    final sortedDates = aggregatedSales.keys.toList()..sort();
+
+    final spots = sortedDates.asMap().entries.map((entry) {
+      final index = entry.key;
+      final date = entry.value;
+      final salesAmount = aggregatedSales[date] ?? 0;
+      return FlSpot(index.toDouble(), salesAmount);
+    }).toList();
+
+    final maxSalesAmount = aggregatedSales.values
+        .fold(0.0, (max, amount) => amount > max ? amount : max);
+    final maxY = maxSalesAmount > 10000 ? maxSalesAmount * 1.2 : 10000;
+
+    return LineChart(LineChartData(
+        minX: 0,
+        maxX: spots.length > 1 ? spots.length.toDouble() - 1 : 1,
+        minY: 0,
+        maxY: maxY.toDouble(),
+        lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(
+          getTooltipItems: (touchedSpots) {
+            return touchedSpots
+                .map((barSpot) => LineTooltipItem(
+                    '₦${barSpot.y.toStringAsFixed(0)}',
+                    const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)))
+                .toList();
+          },
+        )),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxY / 5,
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey[200], strokeWidth: 1),
+        ),
+        titlesData: FlTitlesData(
+            leftTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() >= sortedDates.length ||
+                          value.toInt() < 0) return const SizedBox();
+
+                      final date = sortedDates[value.toInt()];
+                      String title;
+
+                      switch (filter) {
+                        case '1D':
+                        case 'Custom':
+                          title = DateFormat('ha').format(date);
+                          break;
+                        case '7D':
+                          title = DateFormat('EEE').format(date);
+                          break;
+                        case '30D':
+                          title = DateFormat('d').format(date);
+                          break;
+                        default:
+                          title = '';
+                      }
+                      return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(title,
+                              style: TextStyle(
+                                  color: Colors.grey[400], fontSize: 12)));
+                    }))),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: Colors.black,
+              barWidth: 3,
+              isStrokeCapRound: true,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(colors: [
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.0)
+                  ], begin: Alignment.topCenter, end: Alignment.bottomCenter)))
+        ]));
+  }
+
   Widget _buildTransactionDataTable(
       List<SalesModel> sales, BuildContext context) {
     final PrintingService service = PrintingService();
-    // Use the paginated 'sales' list for recent transactions
     final recentSales = sales.length > 5 ? sales.sublist(0, 5) : sales;
 
     return SizedBox(
       width: double.infinity,
       child: DataTable(
         columnSpacing: 16,
+        headingTextStyle: TextStyle(color: Colors.grey[600], fontSize: 12),
+        dataRowMaxHeight: 60,
         columns: const [
-          DataColumn(label: Text('Customer')),
-          DataColumn(label: Text('Amount'), numeric: true),
+          DataColumn(label: Text('CUSTOMER')),
+          DataColumn(label: Text('AMOUNT'), numeric: true),
         ],
         rows: recentSales.map((sale) {
           return DataRow(
@@ -529,9 +612,14 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                         radius: 18,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: Colors.blue[50],
                         child: Text(
-                            sale.customersName!.split('').first.toUpperCase())),
+                          sale.customersName!.split('').first.toUpperCase(),
+                          style: TextStyle(
+                              color: Colors.blue[800],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12),
+                        )),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -539,13 +627,14 @@ class DashboardScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(sale.customersName!,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                               overflow: TextOverflow.ellipsis),
                           Text(
-                              DateFormat('dd MMM yyyy').format(sale.createdAt!),
-                              style: const TextStyle(
-                                  color: Colors.grey, fontSize: 12)),
+                              DateFormat('MMM dd, hh:mm a')
+                                  .format(sale.createdAt!),
+                              style: TextStyle(
+                                  color: Colors.grey[500], fontSize: 12)),
                         ],
                       ),
                     ),
@@ -553,13 +642,27 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               DataCell(Text(currencyFormatter.format(sale.priceInNaira),
-                  style: const TextStyle(fontWeight: FontWeight.bold))),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14))),
             ],
           );
         }).toList(),
       ),
     );
   }
+}
+
+class _StatItem {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  _StatItem(
+      {required this.title,
+      required this.value,
+      required this.icon,
+      required this.color});
 }
 
 void _showSettingsDialog(BuildContext dialogContext) {
@@ -694,7 +797,7 @@ void _showSettingsDialog(BuildContext dialogContext) {
                                                     .gasBalance?.totalSales ??
                                                 0.0,
                                           ),
-                                          appProvider.gasBalance!.id!,
+                                          docId: appProvider.gasBalance?.id,
                                         );
                                         if (!context.mounted) return;
                                         context.showCustomToast(
